@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+{% block content %}
+
+<div class="content-wrapper">
+  <section class="content-header">
+    <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-sm-6"><h1>Foydalanuvchini tahrirlash</h1></div>
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-sm-right">
+            <li class="breadcrumb-item"><a href="{% url 'teacher_list' %}">O‘qituvchilar</a></li>
+            <li class="breadcrumb-item active">Tahrirlash</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="content">
+    <div class="container-fluid">
+      <div class="card card-primary shadow">
+        <div class="card-header">
+          <h3 class="card-title"><i class="fas fa-edit mr-2"></i> Ma'lumotlarni tahrirlash</h3>
+        </div>
+
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6">
+                <!-- Ism -->
+                <div class="form-group">
+                  <label>Ism <span class="text-danger">*</span></label>
+                  {{ form.first_name|add_class:"form-control" }}
+                  {% for error in form.first_name.errors %}
+                    <small class="text-danger">{{ error }}</small>
+                  {% endfor %}
+                </div>
+
+                <!-- Login -->
+                <div class="form-group">
+                  <label>Login (o‘zgarmaydi)</label>
+                  {{ form.username|add_class:"form-control"|attr:"readonly" }}
+                  {% for error in form.username.errors %}
+                    <small class="text-danger">{{ error }}</small>
+                  {% endfor %}
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <!-- Familiya -->
+                <div class="form-group">
+                  <label>Familiya <span class="text-danger">*</span></label>
+                  {{ form.last_name|add_class:"form-control" }}
+                  {% for error in form.last_name.errors %}
+                    <small class="text-danger">{{ error }}</small>
+                  {% endfor %}
+                </div>
+
+                <!-- Telefon -->
+                <div class="form-group">
+                  <label>Telefon raqam <span class="text-danger">*</span></label>
+                  {{ form.phone_number|add_class:"form-control" }}
+                  {% for error in form.phone_number.errors %}
+                    <small class="text-danger">{{ error }}</small>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-footer text-right">
+            <a href="{% url 'teacher_list' %}" class="btn btn-secondary">
+              <i class="fas fa-arrow-left"></i> Orqaga
+            </a>
+            <button type="submit" class="btn btn-success">
+              <i class="fas fa-save"></i> Saqlash
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+</div>
+
+{% endblock %}

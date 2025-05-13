@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+{% block content %}
+
+<!-- Select2 CSS -->
+<link rel="stylesheet" href="{% static 'plugins/select2/css/select2.min.css' %}">
+<link rel="stylesheet" href="{% static 'plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css' %}">
+
+<div class="content-wrapper">
+  <!-- HEADER -->
+  <section class="content-header">
+    <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-sm-6">
+          <h1>Yangi o‘qituvchi qo‘shish</h1>
+        </div>
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-sm-right">
+            <li class="breadcrumb-item"><a href="{% url 'teacher_list' %}">O‘qituvchilar</a></li>
+            <li class="breadcrumb-item active">Yangi foydalanuvchi</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FORM -->
+  <section class="content">
+    <div class="container-fluid">
+      <div class="card card-primary shadow">
+        <div class="card-header">
+          <h3 class="card-title"><i class="fas fa-info-circle mr-2"></i> Ma’lumotlarni to‘ldiring</h3>
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger mt-2">
+              {% for error in form.non_field_errors %}
+                <p>{{ error }}</p>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6">
+                <!-- Ism -->
+                <div class="form-group">
+                  <label for="id_first_name">Ism <span class="text-danger">*</span></label>
+                  <div class="input-group">
+                    <div class="input-group-prepend">
+                      <span class="input-group-text"><i class="fas fa-user"></i></span>
+                    </div>
+                    {{ form.first_name|add_class:"form-control" }}
+                  </div>
+                  {% for error in form.first_name.errors %}<small class="text-danger">{{ error }}</small>{% endfor %}
+                </div>
+
+                <!-- Login -->
+                <div class="form-group">
+                  <label for="id_username">Login (ID raqam) <span class="text-danger">*</span></label>
+                  <div class="input-group">
+                    <div class="input-group-prepend">
+                      <span class="input-group-text"><i class="fas fa-id-badge"></i></span>
+                    </div>
+                    {{ form.username|add_class:"form-control" }}
+                  </div>
+                  {% for error in form.username.errors %}<small class="text-danger">{{ error }}</small>{% endfor %}
+                </div>
+
+                <!-- Telefon -->
+                <div class="form-group">
+                  <label for="id_phone_number">Telefon raqam <span class="text-danger">*</span></label>
+                  <div class="input-group">
+                    <div class="input-group-prepend">
+                      <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                    </div>
+                    {{ form.phone_number|add_class:"form-control" }}
+                  </div>
+                  {% for error in form.phone_number.errors %}<small class="text-danger">{{ error }}</small>{% endfor %}
+                </div>
+
+                <!-- Parol -->
+                <div class="form-group">
+                  <label for="id_password1">Parol <span class="text-danger">*</span></label>
+                  <div class="input-group">
+                    <div class="input-group-prepend">
+                      <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                    </div>
+                    {{ form.password1|add_class:"form-control" }}
+                  </div>
+                  {% for error in form.password1.errors %}<small class="text-danger">{{ error }}</small>{% endfor %}
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <!-- Familiya -->
+                <div class="form-group">
+                  <label for="id_last_name">Familiya <span class="text-danger">*</span></label>
+                  <div class="input-group">
+                    <div class="input-group-prepend">
+                      <span class="input-group-text"><i class="fas fa-user-tag"></i></span>
+                    </div>
+                    {{ form.last_name|add_class:"form-control" }}
+                  </div>
+                  {% for error in form.last_name.errors %}<small class="text-danger">{{ error }}</small>{% endfor %}
+                </div>
+
+                <!-- Kafedra -->
+                <div class="form-group">
+                  <label for="id_department">Kafedra <span class="text-danger">*</span></label>
+                  {{ form.department|add_class:"form-control select2" }}
+                  {% for error in form.department.errors %}<small class="text-danger">{{ error }}</small>{% endfor %}
+                </div>
+
+                <!-- Rasm -->
+                <div class="form-group">
+                  <label for="id_image">Rasm <span class="text-danger">*</span></label>
+                  {{ form.image|add_class:"form-control-file" }}
+                  {% for error in form.image.errors %}<small class="text-danger">{{ error }}</small>{% endfor %}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-footer text-right">
+            <a href="{% url 'teacher_list' %}" class="btn btn-secondary">
+              <i class="fas fa-arrow-left"></i> Orqaga
+            </a>
+            <button type="submit" class="btn btn-success">
+              <i class="fas fa-save"></i> Saqlash
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- Select2 JS -->
+<script src="{% static 'plugins/select2/js/select2.full.min.js' %}"></script>
+<script>
+  $(function () {
+    $('.select2').select2({ theme: 'bootstrap4' });
+  });
+</script>
+
+{% endblock %}

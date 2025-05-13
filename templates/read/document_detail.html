@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<div class="content-wrapper">
+  <!-- Header -->
+  <section class="content-header">
+    <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-sm-6">
+          <h1>{{ document.title }}</h1>
+        </div>
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-sm-right">
+            <li class="breadcrumb-item"><a href="{% url 'ilmiy_ishlar_list' %}">Ilmiy ishlar</a></li>
+            <li class="breadcrumb-item active">{{ document.title|truncatechars:20 }}</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Detail -->
+  <section class="content">
+    <div class="container-fluid">
+      <div class="row">
+        <!-- Info -->
+        <div class="col-md-5">
+          <div class="card card-primary card-outline shadow-lg">
+            {% if document.image %}
+              <img src="{{ document.image.url }}"
+                   class="card-img-top rounded"
+                   style="height:450px; object-fit:cover;">
+            {% else %}
+              <img src="{% static 'images/default-document.png' %}"
+                   class="card-img-top rounded"
+                   style="height:250px; object-fit:cover;">
+            {% endif %}
+            <div class="card-body">
+              <p><strong>Nomi:</strong> {{ document.title }}</p>
+              <p><strong>Tur:</strong> {{ document.document_type.title }}</p>
+              <p><strong>Holati:</strong>
+                {% if request.user.role == Role.MUDIR and document.upload_user.department == request.user.department %}
+                  <form method="post" action="{% url 'update_document_status' document.pk %}" class="d-inline-block">
+                    {% csrf_token %}
+                    <select name="status" class="form-control form-control-sm d-inline w-auto">
+                      {% for val, label in document_status_choices %}
+                        <option value="{{ val }}" {% if val == document.status %}selected{% endif %}>
+                          {{ label }}
+                        </option>
+                      {% endfor %}
+                    </select>
+                    <button type="submit" class="btn btn-sm btn-success ml-2">Saqlash</button>
+                  </form>
+                {% else %}
+                  {{ document.get_status_display }}
+                {% endif %}
+              </p>
+              <p><strong>Tizimga qo'shildi:</strong> {{ document.created|date:"d.m.Y" }}</p>
+              <p><strong>Yuklovchi:</strong> {{ document.upload_user.get_full_name }}</p>
+
+              {% if document.short_description %}
+                <hr>
+                <p>{{ document.short_description }}</p>
+              {% endif %}
+
+              {% if document.url %}
+                <a href="{{ document.url }}" target="_blank" class="btn btn-info btn-block mb-2">
+                  <i class="fas fa-external-link-alt"></i> Tashqi havola
+                </a>
+              {% endif %}
+
+              {% if document.file %}
+                <a href="{{ document.file.url }}" target="_blank" class="btn btn-success btn-block">
+                  <i class="fas fa-eye"></i> Hujjatni ko‘rish
+                </a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Upload User -->
+        <div class="col-md-7">
+          <div class="card card-info card-outline shadow">
+            <div class="card-header">
+              <h3 class="card-title">Muallif: {{ document.upload_user.get_full_name }}</h3>
+            </div>
+            <div class="card-body text-center">
+              {% if document.upload_user.image %}
+                <img src="{{ document.upload_user.image.url }}"
+                     class="img-circle elevation-2 mb-3"
+                     style="width:100px; height:100px; object-fit:cover;">
+              {% else %}
+                <img src="{% static 'images/default-profile.png' %}"
+                     class="img-circle elevation-2 mb-3"
+                     style="width:100px; height:100px; object-fit:cover;">
+              {% endif %}
+              <p><strong>Kafedra:</strong> {{ document.upload_user.department.title }}</p>
+              <p><strong>Fakultet:</strong> {{ document.upload_user.department.faculty.title }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Related Documents -->
+      {% if related_documents %}
+        <div class="row mt-4">
+          <div class="col-12">
+            <div class="card card-outline card-secondary shadow">
+              <div class="card-header">
+                <h3 class="card-title">{{ document.upload_user.get_full_name }} yuklagan boshqa ishlar</h3>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  {% for doc in related_documents %}
+                    <div class="col-md-3 mb-3">
+                      <div class="card h-100">
+                        {% if doc.image %}
+                          <img src="{{ doc.image.url }}"
+                               class="card-img-top"
+                               style="height:140px; object-fit:cover;">
+                        {% else %}
+                          <img src="{% static 'images/default-document.png' %}"
+                               class="card-img-top"
+                               style="height:140px; object-fit:cover;">
+                        {% endif %}
+                        <div class="card-body d-flex flex-column">
+                          <h6 class="card-title text-truncate">{{ doc.title|truncatechars:40 }}</h6>
+                          <a href="{% url 'ilmiy_ish_detail' doc.pk %}"
+                             class="btn btn-outline-primary btn-sm mt-auto">Batafsil</a>
+                        </div>
+                      </div>
+                    </div>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endif %}
+
+    </div>
+  </section>
+</div>
+
+{% endblock %}

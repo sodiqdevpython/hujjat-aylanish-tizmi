@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% load static widget_tweaks %}
+{% block content %}
+
+<div class="content-wrapper">
+  <section class="content-header">
+    <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-sm-6">
+          <h1>Shaxsiy ish reja qo‘shish</h1>
+          <p class="text-muted">{{ teacher.get_full_name }} uchun reja belgilash</p>
+        </div>
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-sm-right">
+            <li class="breadcrumb-item">
+              <a href="{% url 'teacher_list' %}">O‘qituvchilar</a>
+            </li>
+            <li class="breadcrumb-item">
+              <a href="{% url 'user_profile_detail' teacher.pk %}">{{ teacher.get_full_name }}</a>
+            </li>
+            <li class="breadcrumb-item active">Yangi reja</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="content">
+    <div class="container-fluid">
+      <div class="card card-primary shadow">
+        <div class="card-header">
+          <h3 class="card-title"><i class="fas fa-tasks mr-2"></i> Reja ma’lumotlarini kiriting</h3>
+        </div>
+
+        <form method="post" id="reqForm">
+          {% csrf_token %}
+          <div class="card-body">
+            <div class="row">
+              <!-- MainWorkPlan -->
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="id_main_plan">Asosiy rejalar guruhi</label>
+                  {{ form.main_plan|add_class:"form-control" }}
+                  {% for err in form.main_plan.errors %}
+                    <small class="text-danger">{{ err }}</small>
+                  {% endfor %}
+                </div>
+              </div>
+              <!-- SubWorkPlan -->
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="id_sub_plan">Qo‘shimcha reja turi</label>
+                  {{ form.sub_plan|add_class:"form-control" }}
+                  {% for err in form.sub_plan.errors %}
+                    <small class="text-danger">{{ err }}</small>
+                  {% endfor %}
+                </div>
+              </div>
+              <!-- Quantity -->
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label for="id_quantity_planned">Miqdori</label>
+                  {{ form.quantity_planned|add_class:"form-control" }}
+                  {% for err in form.quantity_planned.errors %}
+                    <small class="text-danger">{{ err }}</small>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-footer text-right">
+            <a href="{% url 'user_profile_detail' teacher.pk %}" class="btn btn-secondary">
+              <i class="fas fa-arrow-left"></i> Orqaga
+            </a>
+            <button type="submit" class="btn btn-success">
+              <i class="fas fa-save"></i> Saqlash
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var main = document.getElementById('id_main_plan');
+    if (main) {
+      main.addEventListener('change', function(){
+        // formni qayta yuboramiz, shunda JS orqali sub_plan queryset yangilanadi
+        document.getElementById('reqForm').submit();
+      });
+    }
+  });
+</script>
+
+{% endblock %}

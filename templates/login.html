@@ -1,0 +1,114 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AFU</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body,
+    html {
+      height: 100%;
+      font-family: Arial, sans-serif;
+    }
+
+    .full-width-container {
+      display: flex;
+      width: 100%;
+      height: 100vh;
+    }
+
+    .left-section {
+      background-color: #007bff;
+      color: white;
+      width: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .left-section img {
+      width: 80%;
+      max-width: 300px;
+      margin-bottom: 15px;
+    }
+
+    .right-section {
+      width: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 30px;
+      background-color: #f8f9fa;
+    }
+
+    .login-form {
+      width: 100%;
+      max-width: 350px;
+    }
+
+    @media (max-width: 768px) {
+      .full-width-container {
+        flex-direction: column;
+      }
+
+      .left-section,
+      .right-section {
+        width: 100%;
+        padding: 20px;
+      }
+
+      .left-section img {
+        width: 60%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="full-width-container">
+    <div class="left-section">
+      <img src="{% static 'assets/img/illustration-1.webp' %}" alt="Logo">
+      <h5>Zamonaviy ta’lim va sharqona tarbiya uyg‘unligi</h5>
+    </div>
+    <div class="right-section">
+      <div class="login-form">
+        <h4 class="mb-4">Tizimga kirish</h4>
+        <form method="post">{% csrf_token %}
+          <div class="form-group">
+            <label for="login">ID raqam</label>
+            <input type="text" maxlength="9" name="username" class="form-control" id="login">
+          </div>
+          <div class="form-group">
+            <label for="password">Parol</label>
+            <input autocomplete="" type="password" name="password" maxlength="32" class="form-control" id="password"
+              >
+          </div>
+          {% if error_message %}
+          <p style="color: red;">{{ error_message }}</p>
+          {% endif %}
+          <button type="submit" class="btn btn-primary btn-block">Kirish</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS, Popper.js, and jQuery -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<div class="content-wrapper">
+  <!-- Sahifa sarlavhasi -->
+  <section class="content-header">
+    <div class="container-fluid">
+      <h1>Ilmiy ishlar</h1>
+    </div>
+  </section>
+
+  <!-- Asosiy kontent -->
+  <section class="content">
+    <div class="container-fluid">
+
+      <!-- Qidiruv va Filtrlar -->
+      <form method="get" class="mb-4">
+        <div class="row">
+          <div class="col-md-3">
+            <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Qidiruv…">
+          </div>
+          <div class="col-md-2">
+            <select name="doc_type" class="form-control">
+              <option value="">Ilmiy ish turi</option>
+              {% for type in doc_types %}
+                <option value="{{ type.id }}" {% if type.id|stringformat:"s" == selected_doc_type %}selected{% endif %}>{{ type.title }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-2">
+            <select name="faculty" class="form-control">
+              <option value="">Fakultet</option>
+              {% for fac in faculties %}
+                <option value="{{ fac.id }}" {% if fac.id|stringformat:"s" == selected_faculty %}selected{% endif %}>{{ fac.title }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-2">
+            <select name="department" class="form-control">
+              <option value="">Kafedra</option>
+              {% for dep in departments %}
+                <option value="{{ dep.id }}" {% if dep.id|stringformat:"s" == selected_department %}selected{% endif %}>{{ dep.title }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3 text-right">
+            <button type="submit" class="btn btn-primary">Filtrlash</button>
+          </div>
+        </div>
+      </form>
+
+      <!-- Kartochkalar -->
+      <div class="row">
+        {% for doc in page_obj %}
+          <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+            <div class="card h-100 shadow-sm" style="border-radius:1rem; transition: transform 0.2s;">
+              
+              {% if doc.image %}
+                <img src="{{ doc.image.url }}"
+                     class="card-img-top"
+                     alt="{{ doc.title }}"
+                     style="height:160px; object-fit:cover; border-top-left-radius:1rem; border-top-right-radius:1rem;">
+              {% else %}
+                <img src="{% static 'images/default_book.png' %}"
+                     class="card-img-top"
+                     alt="Default"
+                     style="height:160px; object-fit:cover; border-top-left-radius:1rem; border-top-right-radius:1rem;">
+              {% endif %}
+
+              <div class="card-body d-flex flex-column">
+                <h5 class="card-title text-truncate" title="{{ doc.title }}">{{ doc.title }}</h5>
+                <p class="card-text mb-1 small text-muted">
+                  <i class="fas fa-user mr-1"></i>{{ doc.upload_user.get_full_name }}<br>
+                  <i class="fas fa-calendar-alt mr-1"></i>{{ doc.created|date:"d.m.Y" }}
+                </p>
+                <div class="mt-auto">
+                  <a href="{% url 'ilmiy_ish_detail' doc.pk %}" class="btn btn-sm btn-outline-info btn-block">
+                    <i class="fas fa-eye mr-1"></i> Ko‘rish
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        {% empty %}
+          <div class="col-12 text-center text-muted">Ilmiy ishlar topilmadi.</div>
+        {% endfor %}
+      </div>
+
+      <!-- Paginatsiya -->
+      {% if page_obj.has_other_pages %}
+        <nav aria-label="Sahifalar" class="mt-4">
+          <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link"
+                   href="?page={{ page_obj.previous_page_number }}&q={{ query }}&doc_type={{ selected_doc_type }}&faculty={{ selected_faculty }}&department={{ selected_department }}">
+                  ‹
+                </a>
+              </li>
+            {% endif %}
+            {% for num in page_obj.paginator.page_range %}
+              <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                <a class="page-link"
+                   href="?page={{ num }}&q={{ query }}&doc_type={{ selected_doc_type }}&faculty={{ selected_faculty }}&department={{ selected_department }}">
+                  {{ num }}
+                </a>
+              </li>
+            {% endfor %}
+            {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link"
+                   href="?page={{ page_obj.next_page_number }}&q={{ query }}&doc_type={{ selected_doc_type }}&faculty={{ selected_faculty }}&department={{ selected_department }}">
+                  ›
+                </a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+      {% endif %}
+
+    </div>
+  </section>
+</div>
+
+<style>
+  .card:hover {
+    transform: scale(1.03);
+    box-shadow: 0 15px 25px rgba(0, 0, 0, 0.15);
+  }
+</style>
+
+{% endblock %}

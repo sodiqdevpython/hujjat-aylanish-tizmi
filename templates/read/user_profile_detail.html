@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<div class="content-wrapper">
+  <section class="content-header">
+    <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-sm-6">
+          <h1>Foydalanuvchi profili</h1>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="content">
+    <div class="container-fluid">
+      <div class="row">
+        <!-- SHAXSIY MA'LUMOTLAR -->
+        <div class="col-md-4">
+          <div class="card card-info card-outline">
+            <div class="card-header"><h3 class="card-title">Shaxsiy ma'lumotlar</h3></div>
+            <div class="card-body p-0">
+              <table class="table table-striped mb-0">
+                <tr>
+                  <td class="text-center" rowspan="3">
+                    {% if user_profile.image %}
+                      <img src="{{ user_profile.image.url }}" class="img-fluid rounded" style="max-height:180px;">
+                    {% else %}
+                      <img src="{% static 'images/default-profile.png' %}" class="img-fluid rounded" style="max-height:120px;">
+                    {% endif %}
+                  </td>
+                </tr>
+                <tr></tr><tr></tr>
+                <tr><th>Login</th><td>{{ user_profile.username }}</td></tr>
+                <tr><th>Familiya</th><td>{{ user_profile.last_name }}</td></tr>
+                <tr><th>Ism</th><td>{{ user_profile.first_name }}</td></tr>
+                <tr><th>Telefon</th><td>{{ user_profile.phone_number|default:"-" }}</td></tr>
+                <tr><th>Kafedra</th><td>{{ user_profile.department.title|default:"-" }}</td></tr>
+                <tr><th>Fakultet</th><td>{{ user_profile.department.faculty.title|default:"-" }}</td></tr>
+                <tr><th>Roli</th><td>{{ user_profile.get_role_display }}</td></tr>
+              </table>
+
+              {% if has_permission_for_update_or_adding_work %}
+              <div class="m-3">
+                <a href="{% url 'add_requirement' user_profile.pk %}" class="btn btn-sm btn-primary">Shaxsiy ish reja qo‘shish</a>
+                <a href="{% url 'user_profile_update' user_profile.pk  %}" class="btn btn-sm btn-warning">Tahrirlash</a>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- GRAFIK + HUJJATLAR -->
+        <div class="col-md-8">
+          <!-- Faollik grafigi -->
+          <div class="card card-info card-outline mb-4">
+            <div class="card-header bg-info text-white">
+              <h3 class="card-title"><i class="fas fa-chart-line mr-2"></i>Faollik (6 oy)</h3>
+            </div>
+            <div class="card-body p-3">
+              <canvas id="activityChart" style="height:200px"></canvas>
+            </div>
+          </div>
+
+          <!-- Ilmiy ishlar ro‘yxati -->
+          <div class="card card-secondary card-outline">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <h3 class="card-title"><i class="fas fa-file-alt mr-2"></i>Yuklangan ilmiy ishlar</h3>
+              <form method="get" class="form-inline">
+                <select name="doc_type" class="form-control form-control-sm">
+                  <option value="">Barchasi</option>
+                  {% for dt in document_types %}
+                    <option value="{{ dt.id }}" {% if selected_type == dt.id|stringformat:"s" %}selected{% endif %}>{{ dt.title }}</option>
+                  {% endfor %}
+                </select>
+                <button class="btn btn-sm btn-outline-info ml-2"><i class="fas fa-filter"></i></button>
+              </form>
+            </div>
+            <div class="card-body p-0">
+              <div class="table-responsive" style="max-height:250px;overflow-y:auto">
+                <table class="table table-sm mb-0">
+                  <thead class="thead-light sticky-top">
+                    <tr><th>Nomi</th><th>Turi</th><th>Sana</th><th></th></tr>
+                  </thead>
+                  <tbody>
+                    {% for doc in documents %}
+                      <tr>
+                        <td>{{ doc.title }}</td>
+                        <td>{{ doc.document_type.title }}</td>
+                        <td>{{ doc.created_at|date:"d.m.Y" }}</td>
+                        <td class="text-center">
+                          <a href="{% url 'ilmiy_ish_detail' doc.pk %}">ko'rish</a>
+                        </td>
+                      </tr>
+                    {% empty %}
+                      <tr><td colspan="4" class="text-center">Hujjatlar mavjud emas</td></tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- Chart.js -->
+<script src="{% static 'plugins/chart.js/Chart.min.js' %}"></script>
+<script>
+  const actCtx = document.getElementById('activityChart').getContext('2d');
+  new Chart(actCtx, {
+    type: 'line',
+    data: {
+      labels: {{ faollik_months|safe }},
+      datasets: [{
+        label: 'Ilmiy ishlar soni',
+        data: {{ faollik_counts|safe }},
+        borderColor: '#17a2b8',
+        backgroundColor: 'rgba(23,162,184,0.2)',
+        fill: true,
+        tension: 0.4,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: { beginAtZero: true }
+      }
+    }
+  });
+</script>
+
+{% endblock %}
