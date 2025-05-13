@@ -4,7 +4,7 @@ from django.contrib.auth import authenticate, login
 from django.http import HttpResponseForbidden
 from . import forms
 from .choices import Role, DocumentStatus
-from .models import User, Faculty, Department, Document, DocumentType, AddRequirement, SubWorkPlan, MainWorkPlan, PlanResponse
+from .models import User, Faculty, Department, Document, DocumentType, MainWorkPlan, WorkPlanSummary, AddRequirement, PlanResponse
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView
 from django.db.models import Count
@@ -15,6 +15,8 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from django.views.decorators.http import require_POST
 from django.db.models import Sum
+from collections import defaultdict
+from decimal import Decimal
 
 @login_required
 def dashboard(request):
@@ -297,14 +299,15 @@ def add_requirement(request, teacher_id):
 
 @login_required
 def work_plan_report(request):
+    # ---- 1.  Ruxsat: faqat kafedra mudiri ----
     if request.user.role != Role.MUDIR:
         return HttpResponseForbidden()
 
-    # Filtr parametrlar
-    fac_id = request.GET.get("faculty", "")
-    dept_id = request.GET.get("department", "")
+    # ---- 2.  Filtrlar ----
+    fac_id  = request.GET.get("faculty")
+    dept_id = request.GET.get("department")
 
-    faculties = Faculty.objects.all()
+    faculties   = Faculty.objects.all()
     departments = Department.objects.filter(faculty_id=fac_id) if fac_id else Department.objects.none()
 
     teachers = User.objects.filter(role=Role.OQITUVCHI)
@@ -312,76 +315,68 @@ def work_plan_report(request):
         teachers = teachers.filter(department__faculty_id=fac_id)
     if dept_id:
         teachers = teachers.filter(department_id=dept_id)
-    teachers = teachers.order_by('last_name', 'first_name')
+    teachers = teachers.order_by("last_name", "first_name")
 
-    main_plans = MainWorkPlan.objects.prefetch_related('subwork').all()
-
-    # Reja yozuvlari (faqat parenti bor subplanlar)
-    reqs = (
-        AddRequirement.objects
-        .filter(teacher__in=teachers, sub_plan__parent__isnull=False)
-        .values('teacher_id', 'sub_plan_id', 'sub_plan__parent_id')
-        .annotate(total_planned=Sum('quantity_planned'))
-    )
-
-    # Amalda bajarilganlar
-    responses = (
-        PlanResponse.objects
-        .filter(requirement__teacher__in=teachers,
-                requirement__sub_plan__parent__isnull=False)
-        .values('requirement__teacher_id',
-                'requirement__sub_plan_id',
-                'requirement__sub_plan__parent_id')
-        .annotate(total_actual=Sum('quantity_actual'))
-    )
-
-    # stats = {teacher->{main->{sub:{planned,actual}}}}
-    stats = {
-        t.id: {
-            mp.id: {sp.id: {'planned': 0, 'actual': 0} for sp in mp.subwork.all()}
-            for mp in main_plans
-        }
-        for t in teachers
-    }
-
-    # To‘ldirish: reja
-    for r in reqs:
-        tid = r.get('teacher_id')
-        mid = r.get('sub_plan__parent_id')
-        sid = r.get('sub_plan_id')
-        if tid is None or mid is None or sid is None:
-            continue
-        # agar bunday kalitlar mavjud bo‘lsa, qiymat beramiz
-        if tid in stats and mid in stats[tid] and sid in stats[tid][mid]:
-            stats[tid][mid][sid]['planned'] = r['total_planned']
-
-    # Amalda bajarilgan
-    for r in responses:
-        tid = r.get('requirement__teacher_id')
-        mid = r.get('requirement__sub_plan__parent_id')
-        sid = r.get('requirement__sub_plan_id')
-        if tid is None or mid is None or sid is None:
-            continue
-        if tid in stats and mid in stats[tid] and sid in stats[tid][mid]:
-            stats[tid][mid][sid]['actual'] = r['total_actual']
-
-    # Footer hisobi
-    footer = {}
+    # ---- 3.  Ustunlar ketma-ketligi ----
+    main_plans = MainWorkPlan.objects.prefetch_related("subwork")
+    columns = []              # [(main, sub), ...] – tartib bo‘yicha
+    main_meta = []            # [{'mp': mp, 'subs': [sp, ...], 'colspan': N}, ...]
     for mp in main_plans:
-        footer[mp.id] = {}
-        for sp in mp.subwork.all():
-            p = sum(stats[t.id][mp.id][sp.id]['planned'] for t in teachers)
-            a = sum(stats[t.id][mp.id][sp.id]['actual']  for t in teachers)
-            footer[mp.id][sp.id] = {'planned': p, 'actual': a}
+        subs = list(mp.subwork.all())
+        if not subs:          # agar child bo‘lmasa, bitta “soxta” sub yaratamiz
+            subs = [None]
+        columns.extend([(mp, sp) for sp in subs])
+        main_meta.append({"mp": mp, "subs": subs, "colspan": len(subs) * 2})
 
-    return render(request, 'read/work_plan_report.html', {
-        'teachers': teachers,
-        'main_plans': main_plans,
-        'stats': stats,
-        'footer': footer,
-        'faculties': faculties,
-        'departments': departments,
-        'selected_faculty': fac_id,
-        'selected_department': dept_id,
-    })
+    # ---- 4.  Hammasini bir martalik queryset -> dict ----
+    stat = defaultdict(lambda: {"planned": Decimal("0.0"), "actual": Decimal("0.0")})
+
+    # 4-a  Reja miqdori
+    for req in AddRequirement.objects.filter(teacher__in=teachers):
+        main_id = req.main_plan_id or (req.sub_plan.parent_id if req.sub_plan else None)
+        sub_id  = req.sub_plan_id
+        key = (req.teacher_id, main_id, sub_id)
+        stat[key]["planned"] += req.quantity_planned
+
+    # 4-b  Amalda miqdori
+    for pr in PlanResponse.objects.select_related("requirement").filter(
+        requirement__teacher__in=teachers
+    ):
+        req = pr.requirement
+        main_id = req.main_plan_id or (req.sub_plan.parent_id if req.sub_plan else None)
+        sub_id  = req.sub_plan_id
+        key = (req.teacher_id, main_id, sub_id)
+        stat[key]["actual"] += pr.quantity_actual
+
+    # ---- 5.  Jadval satrlari ----
+    table_rows = []
+    for idx, t in enumerate(teachers, 1):
+        row_cells = []
+        for mp, sp in columns:
+            cell = stat[(t.id, mp.id, sp.id if sp else None)]
+            row_cells.append(cell)
+        table_rows.append({"idx": idx, "teacher": t, "cells": row_cells})
+
+    # ---- 6.  Footer (jami) ----
+    footer = []
+    for mp, sp in columns:
+        p_sum = sum(stat[(t.id, mp.id, sp.id if sp else None)]["planned"] for t in teachers)
+        a_sum = sum(stat[(t.id, mp.id, sp.id if sp else None)]["actual"]  for t in teachers)
+        footer.append({"planned": p_sum, "actual": a_sum})
+
+    # ---- 7.  Render ----
+    return render(
+        request,
+        "read/work_plan_report.html",
+        {
+            "faculties": faculties,
+            "departments": departments,
+            "selected_faculty": fac_id or "",
+            "selected_department": dept_id or "",
+            "main_meta": main_meta,   # sarlavha ma’lumoti
+            "columns": columns,       # tartib bo‘yicha (mp, sp)
+            "table_rows": table_rows,
+            "footer": footer,
+        },
+    )
 

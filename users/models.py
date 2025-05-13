@@ -114,3 +114,13 @@ class SendRequest(BaseModel):
 
     def __str__(self):
         return f"{self.document} - {self.status}"
+
+class WorkPlanSummary(BaseModel):
+    teacher = models.ForeignKey(User, on_delete=models.CASCADE)
+    main_plan = models.ForeignKey(MainWorkPlan, on_delete=models.CASCADE)
+    sub_plan  = models.ForeignKey(SubWorkPlan, on_delete=models.CASCADE)
+    total_planned = models.DecimalField(max_digits=5, decimal_places=1, default=0)
+    total_actual  = models.DecimalField(max_digits=5, decimal_places=1, default=0)
+
+    class Meta:
+        unique_together = ('teacher','main_plan','sub_plan')

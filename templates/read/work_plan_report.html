@@ -1,85 +1,89 @@
 {% extends 'base.html' %}
 {% load static %}
-{% load dict_get %}
 {% block content %}
 <div class="content-wrapper px-3">
-  <section class="content-header">
-    <h1>{{ request.user.department.title }} kafedra — Ish reja hisobot</h1>
-  </section>
-  <section class="content">
-    <div class="container-fluid">
 
-      <!-- Filtr -->
-      <form method="get" class="form-inline mb-3">
-        <select name="faculty" class="form-control mr-2">
-          <option value="">Barcha fakultetlar</option>
-          {% for fac in faculties %}
-            <option value="{{ fac.id }}" {% if fac.id|stringformat:"s" == selected_faculty %}selected{% endif %}>{{ fac.title }}</option>
+  <!-- ======= FILTR ======= -->
+  <form class="form-inline mb-3" method="get">
+    <select name="faculty" class="form-control mr-2">
+      <option value="">Barcha fakultetlar</option>
+      {% for f in faculties %}
+        <option value="{{ f.id }}"{% if f.id|stringformat:'s' == selected_faculty %} selected{% endif %}>
+          {{ f.title }}
+        </option>
+      {% endfor %}
+    </select>
+    <select name="department" class="form-control mr-2">
+      <option value="">Barcha kafedralar</option>
+      {% for d in departments %}
+        <option value="{{ d.id }}"{% if d.id|stringformat:'s' == selected_department %} selected{% endif %}>
+          {{ d.title }}
+        </option>
+      {% endfor %}
+    </select>
+    <button class="btn btn-primary">Ko‘rsatish</button>
+  </form>
+
+  <!-- ======= JADVAL ======= -->
+  <div class="table-responsive">
+    <table class="table table-bordered table-sm text-center">
+
+      <!-- --- 3 qavatli sarlavha --- -->
+      <thead class="thead-light">
+        <!-- 1-qator: MainWorkPlan nomi -->
+        <tr>
+          <th rowspan="3">№</th>
+          <th rowspan="3">F.I.Sh</th>
+          {% for m in main_meta %}
+            <th colspan="{{ m.colspan }}">{{ m.mp.name }}</th>
           {% endfor %}
-        </select>
-        <select name="department" class="form-control mr-2">
-          <option value="">Barcha kafedralar</option>
-          {% for dep in departments %}
-            <option value="{{ dep.id }}" {% if dep.id|stringformat:"s" == selected_department %}selected{% endif %}>{{ dep.title }}</option>
-          {% endfor %}
-        </select>
-        <button class="btn btn-primary">Ko‘rsatish</button>
-      </form>
-
-      <div class="table-responsive">
-        <table class="table table-bordered table-sm text-center">
-          <thead class="thead-light">
-            <tr>
-              <th rowspan="2">№</th>
-              <th rowspan="2">F.I.Sh</th>
-              {% for mp in main_plans %}
-                {% widthratio mp.subwork.all|length 0 2 as colspan %}
-                <th colspan="{{ colspan }}">{{ mp.name }}</th>
-              {% endfor %}
-            </tr>
-            <tr>
-              {% for mp in main_plans %}
-                {% for sp in mp.subwork.all %}
-                  <th>{{ sp.name }} Reja</th>
-                  <th>{{ sp.name }} Amalda</th>
-                {% endfor %}
-              {% endfor %}
-            </tr>
-          </thead>
-
-          <tbody>
-            {% for t in teachers %}
-            <tr>
-              <td>{{ forloop.counter }}</td>
-              <td class="text-left">{{ t.last_name }} {{ t.first_name }}</td>
-              {% for mp in main_plans %}
-                {% for sp in mp.subwork.all %}
-                  {% with cell=stats|dict_get:t.id|dict_get:mp.id|dict_get:sp.id %}
-                    <td>{% if cell.planned %}{{ cell.planned }}{% else %}&mdash;{% endif %}</td>
-                    <td>{% if cell.actual %}{{ cell.actual }}{% else %}&mdash;{% endif %}</td>
-                  {% endwith %}
-                {% endfor %}
-              {% endfor %}
-            </tr>
+        </tr>
+        <!-- 2-qator: SubWorkPlan nomi -->
+        <tr>
+          {% for m in main_meta %}
+            {% for sp in m.subs %}
+              <th colspan="2">
+                {% if sp %}{{ sp.name }}{% else %}&nbsp;{% endif %}
+              </th>
             {% endfor %}
-          </tbody>
+          {% endfor %}
+        </tr>
+        <!-- 3-qator: Reja / Amalda -->
+        <tr>
+          {% for m in main_meta %}
+            {% for sp in m.subs %}
+              <th>Reja</th><th>Amalda</th>
+            {% endfor %}
+          {% endfor %}
+        </tr>
+      </thead>
 
-          <tfoot class="thead-light font-weight-bold">
-            <tr>
-              <td colspan="2">Jami</td>
-              {% for mp in main_plans %}
-                {% for sp in mp.subwork.all %}
-                  {% with f=footer|dict_get:mp.id|dict_get:sp.id %}
-                    <td>{% if f.planned %}{{ f.planned }}{% else %}&mdash;{% endif %}</td>
-                    <td>{% if f.actual %}{{ f.actual }}{% else %}&mdash;{% endif %}</td>
-                  {% endwith %}
-                {% endfor %}
-              {% endfor %}
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-    </div>
-  </section>
+      <!-- --- Tana --- -->
+      <tbody>
+        {% for row in table_rows %}
+        <tr>
+          <td>{{ row.idx }}</td>
+          <td class="text-left">{{ row.teacher.last_name }} {{ row.teacher.first_name }}</td>
+          {% for c in row.cells %}
+            <td>{{ c.planned|default:" " }}</td>
+            <td>{{ c.actual|default:" " }}</td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+
+      <!-- --- Jami --- -->
+      <tfoot class="thead-light font-weight-bold">
+        <tr>
+          <td colspan="2">Jami</td>
+          {% for c in footer %}
+            <td>{{ c.planned|default:" " }}</td>
+            <td>{{ c.actual|default:" " }}</td>
+          {% endfor %}
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
 </div>
 {% endblock %}

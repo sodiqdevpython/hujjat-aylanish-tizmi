@@ -3,7 +3,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import UserChangeForm, UserCreationForm
 from .models import (
     Faculty, Department, User, DocumentType, Document,
-    MainWorkPlan, SubWorkPlan, AddRequirement, PlanResponse, SendRequest
+    MainWorkPlan, SubWorkPlan, AddRequirement, PlanResponse, SendRequest, WorkPlanSummary
 )
 
 # Fakultet
@@ -94,3 +94,5 @@ class SendRequestAdmin(admin.ModelAdmin):
     list_filter = ['status']
     search_fields = ['document__title', 'who_rejected__first_name']
     autocomplete_fields = ['document', 'requirement', 'who_rejected']
+
+admin.site.register(WorkPlanSummary)
