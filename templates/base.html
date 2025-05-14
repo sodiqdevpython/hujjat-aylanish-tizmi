@@ -57,9 +57,15 @@
                             alt="User Image">
                     </div>
                     <div class="info">
-                        <a href="#" class="d-block">
-                            {{ request.user.first_name }} {{ request.user.last_name }}
-                        </a>
+                        {% if request.user.role != "oqituvchi" %}
+                            <a href="#" class="d-block">
+                                {{ request.user.first_name }} {{ request.user.last_name }}
+                            </a>
+                        {% else %}
+                            <a href="{% url 'my_profile' %}" class="d-block">
+                                {{ request.user.first_name }} {{ request.user.last_name }}
+                            </a>
+                        {% endif %}
                     </div>
                 </div>
             </ul>

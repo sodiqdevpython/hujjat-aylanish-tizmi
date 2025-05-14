@@ -819,3 +819,32 @@ def my_notifications(request):
     return render(request, "read/my_notifications.html", {"page_obj": page_obj})
 
 
+
+@login_required
+def document_create(request):
+    if request.user.role != Role.OQITUVCHI:
+        return HttpResponseForbidden()
+
+    if request.method == "POST":
+        form = forms.DocumentCreateForm(request.POST, request.FILES, user=request.user)
+        if form.is_valid():
+            doc = form.save(commit=False)
+            doc.upload_user  = request.user
+            doc.status = DocumentStatus.PENDING
+            doc.is_confirmed = False
+            doc.save()
+
+            # kafedra mudiriga xabar
+            mudir = request.user.department.user_set.filter(role=Role.MUDIR).first()
+            if mudir:
+                Notification.objects.create(
+                    recipient=mudir,
+                    title="Tasdiqlash uchun yangi hujjat",
+                    message=f"{request.user.get_full_name()} «{doc.title}» yukladi",
+                    url=reverse("doc_approve_detail", args=[doc.id])
+                )
+            return redirect("my_documents")
+    else:
+        form =forms.DocumentCreateForm(user=request.user)
+
+    return render(request, "create/document_create.html", {"form": form})

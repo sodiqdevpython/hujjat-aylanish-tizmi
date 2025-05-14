@@ -30,5 +30,6 @@ urlpatterns = [
     path("my-documents/", views.my_documents, name="my_documents"),
     path("my-requirements/", views.my_requirements_view, name="my_requirements"),
     path('teacher-notifications/', views.my_notifications, name='my_notifications'),
+    path('document-create', views.document_create, name='document_create')
 
 ]

@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% load static widget_tweaks %}
+{% block content %}
+<div class="content-wrapper">
+
+  <!-- HEADER -->
+  <section class="content-header">
+    <div class="container-fluid">
+      <h1 class="h4">Yangi ilmiy ish yuklash</h1>
+    </div>
+  </section>
+
+  <!-- MAIN -->
+  <section class="content">
+    <div class="container-fluid">
+      <div class="card card-primary shadow-sm">
+
+        <div class="card-body">
+          <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+
+            <div class="form-group">
+              <label>Nomi</label>
+              {{ form.title|add_class:"form-control" }}
+              {{ form.title.errors }}
+            </div>
+
+            <div class="form-group">
+              <label>Qisqacha izoh</label>
+              {{ form.short_description|add_class:"form-control" }}
+              {{ form.short_description.errors }}
+            </div>
+
+            <div class="form-group">
+              <label>Ilmiy ish turi</label>
+              {{ form.document_type|add_class:"form-control" }}
+              {{ form.document_type.errors }}
+            </div>
+
+            <div class="form-group">
+              <label>Hujjat fayli (PDF, DOC...)</label>
+              {{ form.file|add_class:"form-control-file" }}
+              {{ form.file.errors }}
+            </div>
+
+            <div class="form-group">
+              <label>Rasm (ixtiyoriy)</label>
+              {{ form.image|add_class:"form-control-file" }}
+              {{ form.image.errors }}
+            </div>
+
+            <div class="form-group">
+              <label>{{ form.requirement.label }}</label>
+              {{ form.requirement|add_class:"form-control" }}
+              <small class="text-muted">Agar hujjat aniq reja bandiga mos kelsa tanlang, aks holda bo‘sh qoldiring.</small>
+              {{ form.requirement.errors }}
+            </div>
+
+            <button type="submit" class="btn btn-success">
+              <i class="fas fa-upload mr-1"></i> Yuklash
+            </button>
+          </form>
+        </div>
+
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}
