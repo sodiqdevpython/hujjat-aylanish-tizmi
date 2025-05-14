@@ -1,7 +1,10 @@
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
-from .models import AddRequirement, PlanResponse, WorkPlanSummary
+from .models import AddRequirement, PlanResponse, WorkPlanSummary, Document, Notification
+from .choices import Role
 from django.db.models import Sum
+from django.urls import reverse
+
 
 def _refresh_summary(teacher, sub):
     mp = sub.parent
@@ -25,3 +28,16 @@ def sync_response(sender, instance, **kw):
     req = instance.requirement
     if req.sub_plan:
         _refresh_summary(req.teacher, req.sub_plan)
+
+@receiver(post_save, sender=Document)
+def create_pending_notification(sender, instance, created, **kw):
+    if created:
+        teacher = instance.upload_user
+        mudir   = teacher.department.user_set.filter(role=Role.MUDIR).first()
+        if mudir:
+            Notification.objects.create(
+                recipient=mudir,
+                title="Yangi hujjat tasdiqlash uchun",
+                message=f"{teacher.get_full_name()} hujjat yukladi: «{instance.title}»",
+                url=reverse("doc_approve_detail", args=[instance.id])
+            )

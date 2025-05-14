@@ -23,6 +23,10 @@
     </select>
     <button class="btn btn-primary">Ko‘rsatish</button>
   </form>
+  <a href="{% url 'work_plan_export' %}?faculty={{ selected_faculty }}&department={{ selected_department }}"
+    class="btn btn-success mb-2">
+    <i class="fas fa-file-excel"></i> Excel yuklab olish
+  </a>
 
   <!-- ======= JADVAL ======= -->
   <div class="table-responsive">
@@ -60,17 +64,18 @@
 
       <!-- --- Tana --- -->
       <tbody>
-        {% for row in table_rows %}
-        <tr>
-          <td>{{ row.idx }}</td>
-          <td class="text-left">{{ row.teacher.last_name }} {{ row.teacher.first_name }}</td>
-          {% for c in row.cells %}
-            <td>{{ c.planned|default:" " }}</td>
-            <td>{{ c.actual|default:" " }}</td>
-          {% endfor %}
-        </tr>
+        {% for row in page_obj %}
+          <tr>
+            <td>{{ row.idx }}</td>
+            <td class="text-left">{{ row.teacher.last_name }} {{ row.teacher.first_name }}</td>
+            {% for c in row.cells %}
+              <td>{{ c.planned|default:" " }}</td>
+              <td>{{ c.actual|default:" " }}</td>
+            {% endfor %}
+          </tr>
         {% endfor %}
       </tbody>
+
 
       <!-- --- Jami --- -->
       <tfoot class="thead-light font-weight-bold">
@@ -84,6 +89,31 @@
       </tfoot>
     </table>
   </div>
+
+  <div class="mt-3 d-flex justify-content-center">
+  <nav>
+    <ul class="pagination">
+      {% if page_obj.has_previous %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ page_obj.previous_page_number }}&faculty={{ selected_faculty }}&department={{ selected_department }}">Oldingi</a>
+        </li>
+      {% endif %}
+
+      {% for num in page_obj.paginator.page_range %}
+        <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+          <a class="page-link" href="?page={{ num }}&faculty={{ selected_faculty }}&department={{ selected_department }}">{{ num }}</a>
+        </li>
+      {% endfor %}
+
+      {% if page_obj.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ page_obj.next_page_number }}&faculty={{ selected_faculty }}&department={{ selected_department }}">Keyingi</a>
+        </li>
+      {% endif %}
+    </ul>
+  </nav>
+</div>
+
 
 </div>
 {% endblock %}

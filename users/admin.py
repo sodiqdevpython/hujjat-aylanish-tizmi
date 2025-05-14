@@ -3,7 +3,8 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import UserChangeForm, UserCreationForm
 from .models import (
     Faculty, Department, User, DocumentType, Document,
-    MainWorkPlan, SubWorkPlan, AddRequirement, PlanResponse, SendRequest, WorkPlanSummary
+    MainWorkPlan, SubWorkPlan, AddRequirement, PlanResponse, 
+    SendRequest, WorkPlanSummary, Notification
 )
 
 # Fakultet
@@ -96,3 +97,5 @@ class SendRequestAdmin(admin.ModelAdmin):
     autocomplete_fields = ['document', 'requirement', 'who_rejected']
 
 admin.site.register(WorkPlanSummary)
+
+admin.site.register(Notification)

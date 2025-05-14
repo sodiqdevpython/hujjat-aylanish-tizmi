@@ -3,8 +3,21 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 from utils.models import BaseModel
 from . import choices
+from utils.time import current_year
+
 
 nb = dict(null=True, blank=True)
+
+class AcademicYear(models.Model):
+    begin = models.PositiveIntegerField()
+    end   = models.PositiveIntegerField()
+
+    class Meta:
+        unique_together = ("begin", "end")
+        ordering = ("-begin",)
+
+    def __str__(self):
+        return f"{self.begin}-{self.end}"
 
 # Fakultet
 class Faculty(BaseModel):
@@ -103,7 +116,7 @@ class PlanResponse(BaseModel):
 # Hujjatni tasdiqlash jarayoni (SendRequest orqali)
 class SendRequest(BaseModel):
     document = models.ForeignKey(Document, on_delete=models.CASCADE)
-    requirement = models.ForeignKey(AddRequirement, on_delete=models.CASCADE)
+    requirement = models.ForeignKey(AddRequirement, on_delete=models.CASCADE, null=True, blank=True)
     status = models.CharField(
         max_length=20,
         choices=choices.DocumentStatus.choices,
@@ -124,3 +137,18 @@ class WorkPlanSummary(BaseModel):
 
     class Meta:
         unique_together = ('teacher','main_plan','sub_plan')
+
+    def __str__(self):
+        return self.id
+
+class Notification(BaseModel):
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE)
+    title = models.CharField(max_length=256)
+    message = models.TextField()
+    url = models.CharField(max_length=512, null=True, blank=True)
+    is_read = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.id
+
+

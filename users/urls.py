@@ -18,6 +18,11 @@ urlpatterns = [
     
 
     path('users/<int:teacher_id>/requirements/add/', views.add_requirement, name='add_requirement'),
-    path('work-plan/', views.work_plan_report, name='work_plan_report')
+    path('work-plan/', views.work_plan_report, name='work_plan_report'),
+    path("work-plan/export/", views.work_plan_export, name="work_plan_export"),
+
+    path("notifications/", views.notification_list, name="notif_list"),
+    path("doc/<int:pk>/approve/", views.doc_approve_detail, name="doc_approve_detail"),
+
 
 ]

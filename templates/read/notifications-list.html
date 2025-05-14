@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="content-wrapper">
+  <!-- ===== HEADER ===== -->
+  <section class="content-header">
+    <div class="container-fluid">
+      <h1 class="h4 mb-0">Bildirishnomalar</h1>
+      <small class="text-muted">Oxirgi xabarlar</small>
+    </div>
+  </section>
+
+  <!-- ===== MAIN ===== -->
+  <section class="content">
+    <div class="container-fluid">
+      {% if page_obj.object_list %}
+        <ul class="list-group shadow-sm">
+          {% for n in page_obj %}
+            <li class="list-group-item d-flex justify-content-between align-items-start
+                       {% if not n.is_read %}font-weight-bold{% endif %}">
+              <div>
+                <a href="{{ n.url }}" class="stretched-link" style="text-decoration:none;">
+                  {{ n.title }}
+                </a><br>
+                <small class="text-muted">{{ n.message }}</small>
+              </div>
+              <small class="text-muted">{{ n.created|date:"d.m.Y H:i" }}</small>
+            </li>
+          {% endfor %}
+        </ul>
+
+        <!-- ===== PAGINATION ===== -->
+        <nav class="mt-3 d-flex justify-content-center">
+          <ul class="pagination pagination-sm mb-0">
+            {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">‹</a>
+              </li>
+            {% endif %}
+            {% for num in page_obj.paginator.page_range %}
+              <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+              </li>
+            {% endfor %}
+            {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}">›</a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+
+      {% else %}
+        <p class="text-muted">Sizda bildirishnomalar yo‘q.</p>
+      {% endif %}
+    </div>
+  </section>
+</div>
+
+{% endblock %}

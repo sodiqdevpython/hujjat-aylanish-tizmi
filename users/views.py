@@ -4,7 +4,7 @@ from django.contrib.auth import authenticate, login
 from django.http import HttpResponseForbidden
 from . import forms
 from .choices import Role, DocumentStatus
-from .models import User, Faculty, Department, Document, DocumentType, MainWorkPlan, WorkPlanSummary, AddRequirement, PlanResponse
+from .models import User, Faculty, Department, Document, DocumentType, MainWorkPlan, AddRequirement, PlanResponse, SendRequest, Notification
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView
 from django.db.models import Count
@@ -12,19 +12,17 @@ from datetime import datetime
 from calendar import month_name
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.views.decorators.http import require_POST
-from django.db.models import Sum
 from collections import defaultdict
 from decimal import Decimal
+import openpyxl
+from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+from django.http import HttpResponse
+from decimal import Decimal
+from collections import defaultdict
+from django.urls import reverse
 
-@login_required
-def dashboard(request):
-    if not request.user.is_authenticated:
-        return redirect('login')
-    if request.user.role == Role.OQITUVCHI:
-        return redirect('teacher_dashboard')
-    return render(request, 'index.html')
 
 def login_view(request):
     if request.user.is_authenticated:
@@ -356,6 +354,9 @@ def work_plan_report(request):
             cell = stat[(t.id, mp.id, sp.id if sp else None)]
             row_cells.append(cell)
         table_rows.append({"idx": idx, "teacher": t, "cells": row_cells})
+    paginator = Paginator(table_rows, 100)  # har sahifada 100 o'qituvchi
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
 
     # ---- 6.  Footer (jami) ----
     footer = []
@@ -377,6 +378,284 @@ def work_plan_report(request):
             "columns": columns,       # tartib bo‘yicha (mp, sp)
             "table_rows": table_rows,
             "footer": footer,
+            'page_obj': page_obj
         },
     )
+
+
+@login_required
+def work_plan_export(request):
+    if request.user.role != Role.MUDIR:
+        return HttpResponseForbidden()
+
+    # === 1. Filtrlar ===
+    fac_id  = request.GET.get("faculty")
+    dept_id = request.GET.get("department")
+
+    teachers = User.objects.filter(role=Role.OQITUVCHI)
+    if fac_id:
+        teachers = teachers.filter(department__faculty_id=fac_id)
+    if dept_id:
+        teachers = teachers.filter(department_id=dept_id)
+    teachers = teachers.order_by("last_name", "first_name")
+
+    # === 2. Ustunlar tartibi ===
+    main_plans = MainWorkPlan.objects.prefetch_related("subwork")
+    columns = []
+    for mp in main_plans:
+        subs = list(mp.subwork.all()) or [None]   # child yo‘q bo‘lsa bitta bo‘sh sub
+        columns.extend([(mp, sp) for sp in subs])
+
+    # === 3. Reja / Amalda yig‘indilar ===
+    stat = defaultdict(lambda: {"planned": Decimal("0"), "actual": Decimal("0")})
+
+    for req in AddRequirement.objects.filter(teacher__in=teachers):
+        mp = req.main_plan or (req.sub_plan.parent if req.sub_plan else None)
+        key = (req.teacher_id, mp.id, req.sub_plan_id)
+        stat[key]["planned"] += req.quantity_planned
+
+    for pr in PlanResponse.objects.select_related("requirement").filter(
+            requirement__teacher__in=teachers):
+        req = pr.requirement
+        mp  = req.main_plan or (req.sub_plan.parent if req.sub_plan else None)
+        key = (req.teacher_id, mp.id, req.sub_plan_id)
+        stat[key]["actual"] += pr.quantity_actual
+
+    # === 4. Excel yaratish ===
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Ish reja"
+
+    blue = PatternFill("solid", fgColor="BDD7EE")   # katta sarlavha
+    gray = PatternFill("solid", fgColor="D9D9D9")   # kichik sarlavha
+    bold = Font(bold=True)
+    center = Alignment(horizontal="center", vertical="center", wrapText=True)
+    thin = Border(left=Side(style="thin"), right=Side(style="thin"),
+                  top=Side(style="thin"), bottom=Side(style="thin"))
+
+    # === 4-a 3-qavatli sarlavha ===
+    row = 1
+    col = 1
+    ws.merge_cells(start_row=row, start_column=col, end_row=row+2, end_column=col)
+    ws.cell(row, col, "#").fill = blue; ws.cell(row, col).font = bold; ws.cell(row, col).alignment = center
+    col += 1
+    ws.merge_cells(start_row=row, start_column=col, end_row=row+2, end_column=col)
+    ws.cell(row, col, "F.I.Sh").fill = blue; ws.cell(row, col).font = bold; ws.cell(row, col).alignment = center
+    col += 1
+
+    # 1-qavat: MainWorkPlan nomi
+    for mp in main_plans:
+        span = (len(mp.subwork.all()) or 1) * 2
+        ws.merge_cells(start_row=row, start_column=col, end_row=row, end_column=col+span-1)
+        cell = ws.cell(row, col, mp.name)
+        cell.fill = blue; cell.font = bold; cell.alignment = center
+        col += span
+    row += 1; col = 3
+
+    # 2-qavat: SubWorkPlan nomi
+    for mp in main_plans:
+        subs = list(mp.subwork.all()) or [None]
+        for sp in subs:
+            ws.merge_cells(start_row=row, start_column=col, end_row=row, end_column=col+1)
+            name = sp.name if sp else ""
+            cell = ws.cell(row, col, name)
+            cell.fill = gray; cell.font = bold; cell.alignment = center
+            col += 2
+    row += 1; col = 3
+
+    # 3-qavat: Reja/Amalda
+    for mp, sp in columns:
+        ws.cell(row, col, "Reja").fill = gray; ws.cell(row, col).font = bold; ws.cell(row, col).alignment = center
+        ws.cell(row, col+1, "Amalda").fill = gray; ws.cell(row, col+1).font = bold; ws.cell(row, col+1).alignment = center
+        col += 2
+
+    # === 4-b  O‘qituvchi satrlari ===
+    excel_row = 4
+    idx = 1
+    for t in teachers:
+        ws.cell(excel_row, 1, idx)
+        ws.cell(excel_row, 2, f"{t.last_name} {t.first_name}")
+        col = 3
+        for mp, sp in columns:
+            key = (t.id, mp.id, sp.id if sp else None)
+            dat = stat[key]
+            ws.cell(excel_row, col, float(dat["planned"])).alignment = center
+            ws.cell(excel_row, col+1, float(dat["actual"])).alignment = center
+            col += 2
+        idx += 1
+        excel_row += 1
+
+    # === 4-c  Jami qatori ===
+    ws.cell(excel_row, 1, "Jami"); ws.merge_cells(start_row=excel_row, start_column=1, end_row=excel_row, end_column=2)
+    ws.cell(excel_row, 1).font = bold; ws.cell(excel_row, 1).alignment = center
+    col = 3
+    for mp, sp in columns:
+        planned_sum = sum(stat[(t.id, mp.id, sp.id if sp else None)]["planned"] for t in teachers)
+        actual_sum  = sum(stat[(t.id, mp.id, sp.id if sp else None)]["actual"]  for t in teachers)
+        ws.cell(excel_row, col, float(planned_sum)).font = bold; ws.cell(excel_row, col).alignment = center
+        ws.cell(excel_row, col+1, float(actual_sum)).font = bold; ws.cell(excel_row, col+1).alignment = center
+        col += 2
+
+    # === 4-d  Chiziqlar va ustun eni ===
+    for r in ws.iter_rows(min_row=1, max_row=excel_row, min_col=1, max_col=col-1):
+        for c in r:
+            c.border = thin
+    for c in range(1, col):
+        ws.column_dimensions[openpyxl.utils.get_column_letter(c)].width = 12
+
+    # === 5. HTTP javob ===
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    filename = "work_plan_report.xlsx"
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    wb.save(response)
+    return response
+
+
+@login_required
+def doc_approve_detail(request, pk):
+    doc = get_object_or_404(Document, pk=pk)
+    if request.user.role != Role.MUDIR or request.user.department != doc.upload_user.department:
+        return HttpResponseForbidden()
+
+    if request.method == "POST":
+        form = forms.ApproveForm(request.POST)
+        if form.is_valid():
+            action = form.cleaned_data["action"]        # approve / reject
+            comment = form.cleaned_data["comment"]
+            if action == "approve":
+                doc.is_confirmed = True
+                doc.status = DocumentStatus.APPROVED
+                doc.save()
+
+                # reja → amalda
+                req = AddRequirement.objects.filter(
+                    teacher=doc.upload_user, sub_plan__isnull=False).last()
+                if req:
+                    PlanResponse.objects.create(
+                        requirement=req, document=doc, quantity_actual=1)
+
+            else:  # reject
+                SendRequest.objects.create(
+                    document=doc,
+                    requirement=None,
+                    status=DocumentStatus.REJECTED,
+                    rejected_message=comment,
+                    who_rejected=request.user)
+
+                doc.status = DocumentStatus.REJECTED
+                doc.save()
+            # bildirshnoma: o‘qituvchiga
+            Notification.objects.create(
+                recipient=doc.upload_user,
+                title=f"Hujjat {'tasdiqlandi' if action=='approve' else 'rad etildi'}",
+                message=comment or "-",
+                url=reverse("ilmiy_ish_detail", args=[doc.id])
+            )
+            return redirect("work_plan_report")
+    else:
+        form = forms.ApproveForm()
+
+    return render(request, "read/doc_detail.html", {"doc": doc, "form": form})
+
+
+@login_required
+def notification_list(request):
+    # Faqat o'z xabarlari, yangi xabarlar avval
+    notif_qs = Notification.objects.filter(
+        recipient=request.user,
+        is_read=False
+    ).order_by("-created")
+
+    # ----- Paginator (20 ta) -----
+    paginator   = Paginator(notif_qs, 20)
+    page_number = request.GET.get("page")
+    page_obj    = paginator.get_page(page_number)
+
+    # Sahifada ko‘rinayotgan xabarlarni o‘qilgan deb belgilash
+    visible_ids = [n.id for n in page_obj if not n.is_read]
+    if visible_ids:
+        Notification.objects.filter(id__in=visible_ids).update(is_read=True)
+
+    return render(request, "read/notifications-list.html", {"page_obj": page_obj})
+
+
+@login_required
+def dashboard(request):
+    if not request.user.is_authenticated:
+        return redirect('login')
+    if request.user.role == Role.OQITUVCHI:
+        return redirect('teacher_dashboard')
+    # ---- 1.  Ruxsat ----
+    if request.user.role not in (
+        Role.MUDIR,
+        Role.SUPERADMIN,
+        Role.PROREKTOR,
+        Role.DEKAN,
+    ):
+        return HttpResponseForbidden()
+
+    # ---- 2.  Asosiy raqamlar ----
+    total_faculties   = Faculty.objects.count()
+    total_departments = Department.objects.count()
+    total_users       = User.objects.count()
+    total_docs        = Document.objects.count()
+    pending_docs      = Document.objects.filter(status=DocumentStatus.PENDING).count()
+
+    # ---- 3. Fakultet → kafedra sonlari ----
+    fac_breakdown = (
+        Faculty.objects
+        .annotate(dep_cnt=Count("department"))
+        .values("title", "dep_cnt")
+        .order_by("-dep_cnt")
+    )
+
+    # ---- 4. Foydalanuvchi rollari bo‘yicha taqsimot ----
+    role_stats = (
+        User.objects
+        .values("role")
+        .annotate(total=Count("id"))
+    )
+    # Turn into dict {display: count}
+    role_counts = {
+        dict(Role.choices)[item["role"]]: item["total"]
+        for item in role_stats
+    }
+
+    # ---- 5. Hujjatlar holati (tasdiqlangan/pending/rejected) ----
+    doc_status_stats = (
+        Document.objects
+        .values("status")
+        .annotate(total=Count("id"))
+    )
+    status_counts = {
+        dict(DocumentStatus.choices)[s["status"]]: s["total"]
+        for s in doc_status_stats
+    }
+
+    # ---- 6. Last actions (oxirgi 10 ta hujjat) ----
+    recent_docs = (
+        Document.objects
+        .select_related("upload_user", "document_type")
+        .order_by("-created")[:10]
+    )
+
+    context = {
+        # blok 1
+        "total_faculties": total_faculties,
+        "total_departments": total_departments,
+        "total_users": total_users,
+        "total_docs": total_docs,
+        "pending_docs": pending_docs,
+
+        # blok 2
+        "fac_breakdown": fac_breakdown,     # list of dicts
+        "role_counts": role_counts,         # dict
+        "status_counts": status_counts,     # dict
+
+        # blok 3
+        "recent_docs": recent_docs,
+    }
+    return render(request, "read/admin_dashboard.html", context)
 
