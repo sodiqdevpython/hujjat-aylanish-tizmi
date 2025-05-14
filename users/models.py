@@ -64,6 +64,13 @@ class Document(BaseModel):
     )
     url = models.URLField(**nb)
     short_description = models.TextField(**nb)
+    requirement  = models.ForeignKey(           # <─ YANGI!
+        "users.AddRequirement",
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="documents",
+        help_text="Agar hujjat aniq bir reja bandiga javob bersa tanlang."
+    )
     file = models.FileField(upload_to="document/")
     image = models.ImageField(upload_to="document_image/", **nb)
     document_type = models.ForeignKey(DocumentType, on_delete=models.CASCADE)

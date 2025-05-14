@@ -1,70 +1,118 @@
 {% extends 'base.html' %}
 {% load static widget_tweaks %}
 {% block content %}
-<div class="content-wrapper">
 
-  <!-- HEADER -->
+<!-- Select2 CSS -->
+<link rel="stylesheet" href="{% static 'plugins/select2/css/select2.min.css' %}">
+<link rel="stylesheet" href="{% static 'plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css' %}">
+
+<div class="content-wrapper">
+  <!-- ===== HEADER ===== -->
   <section class="content-header">
     <div class="container-fluid">
-      <h1 class="h4">Yangi ilmiy ish yuklash</h1>
+      <div class="row mb-2">
+        <div class="col-sm-6">
+          <h1>Yangi ilmiy ish yuklash</h1>
+        </div>
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-sm-right">
+            <li class="breadcrumb-item"><a href="{% url 'my_documents' %}">Mening hujjatlarim</a></li>
+            <li class="breadcrumb-item active">Yuklash</li>
+          </ol>
+        </div>
+      </div>
     </div>
   </section>
 
-  <!-- MAIN -->
+  <!-- ===== FORM ===== -->
   <section class="content">
     <div class="container-fluid">
-      <div class="card card-primary shadow-sm">
-
-        <div class="card-body">
-          <form method="post" enctype="multipart/form-data">
-            {% csrf_token %}
-            {{ form.non_field_errors }}
-
-            <div class="form-group">
-              <label>Nomi</label>
-              {{ form.title|add_class:"form-control" }}
-              {{ form.title.errors }}
+      <div class="card card-primary shadow">
+        <div class="card-header">
+          <h3 class="card-title"><i class="fas fa-upload mr-2"></i> Hujjat ma’lumotlari</h3>
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger mb-0 mt-2 p-2">
+              {% for err in form.non_field_errors %}{{ err }}{% endfor %}
             </div>
-
-            <div class="form-group">
-              <label>Qisqacha izoh</label>
-              {{ form.short_description|add_class:"form-control" }}
-              {{ form.short_description.errors }}
-            </div>
-
-            <div class="form-group">
-              <label>Ilmiy ish turi</label>
-              {{ form.document_type|add_class:"form-control" }}
-              {{ form.document_type.errors }}
-            </div>
-
-            <div class="form-group">
-              <label>Hujjat fayli (PDF, DOC...)</label>
-              {{ form.file|add_class:"form-control-file" }}
-              {{ form.file.errors }}
-            </div>
-
-            <div class="form-group">
-              <label>Rasm (ixtiyoriy)</label>
-              {{ form.image|add_class:"form-control-file" }}
-              {{ form.image.errors }}
-            </div>
-
-            <div class="form-group">
-              <label>{{ form.requirement.label }}</label>
-              {{ form.requirement|add_class:"form-control" }}
-              <small class="text-muted">Agar hujjat aniq reja bandiga mos kelsa tanlang, aks holda bo‘sh qoldiring.</small>
-              {{ form.requirement.errors }}
-            </div>
-
-            <button type="submit" class="btn btn-success">
-              <i class="fas fa-upload mr-1"></i> Yuklash
-            </button>
-          </form>
+          {% endif %}
         </div>
 
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="card-body">
+            <div class="row">
+              <!-- LEFT COLUMN -->
+              <div class="col-md-6">
+                <!-- Title -->
+                <div class="form-group">
+                  <label>Nomi <span class="text-danger">*</span></label>
+                  <div class="input-group">
+                    <div class="input-group-prepend"><span class="input-group-text"><i class="far fa-file-alt"></i></span></div>
+                    {{ form.title|add_class:"form-control" }}
+                  </div>
+                  {{ form.title.errors }}
+                </div>
+
+                <!-- Short description -->
+                <div class="form-group">
+                  <label>Qisqacha izoh</label>
+                  {{ form.short_description|add_class:"form-control" }}
+                  {{ form.short_description.errors }}
+                </div>
+
+                <!-- Document type -->
+                <div class="form-group">
+                  <label>Ilmiy ish turi <span class="text-danger">*</span></label>
+                  {{ form.document_type|add_class:"form-control select2" }}
+                  {{ form.document_type.errors }}
+                </div>
+              </div>
+
+              <!-- RIGHT COLUMN -->
+              <div class="col-md-6">
+                <!-- File -->
+                <div class="form-group">
+                  <label>Fayl (PDF, DOC... ) <span class="text-danger">*</span></label>
+                  {{ form.file|add_class:"form-control-file" }}
+                  {{ form.file.errors }}
+                </div>
+
+                <!-- Image -->
+                <div class="form-group">
+                  <label>Muqova rasmi (ixtiyoriy)</label>
+                  {{ form.image|add_class:"form-control-file" }}
+                  {{ form.image.errors }}
+                </div>
+
+                <!-- Requirement -->
+                <div class="form-group">
+                  <label>{{ form.requirement.label }}</label>
+                  {{ form.requirement|add_class:"form-control select2" }}
+                  {{ form.requirement.errors }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-footer text-right">
+            <a href="{% url 'my_documents' %}" class="btn btn-secondary">
+              <i class="fas fa-arrow-left"></i> Orqaga
+            </a>
+            <button type="submit" class="btn btn-success">
+              <i class="fas fa-upload"></i> Yuklash
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </section>
 </div>
+
+<!-- Select2 JS -->
+<script src="{% static 'plugins/select2/js/select2.full.min.js' %}"></script>
+<script>
+  $(function () {
+    $('.select2').select2({ theme: 'bootstrap4' });
+  });
+</script>
 {% endblock %}

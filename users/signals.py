@@ -29,18 +29,18 @@ def sync_response(sender, instance, **kw):
     if req.sub_plan:
         _refresh_summary(req.teacher, req.sub_plan)
 
-@receiver(post_save, sender=Document)
-def create_pending_notification(sender, instance, created, **kw):
-    if created:
-        teacher = instance.upload_user
-        mudir   = teacher.department.user_set.filter(role=Role.MUDIR).first()
-        if mudir:
-            Notification.objects.create(
-                recipient=mudir,
-                title="Yangi hujjat tasdiqlash uchun",
-                message=f"{teacher.get_full_name()} hujjat yukladi: «{instance.title}»",
-                url=reverse("doc_approve_detail", args=[instance.id])
-            )
+# @receiver(post_save, sender=Document)
+# def create_pending_notification(sender, instance, created, **kw):
+#     if created:
+#         teacher = instance.upload_user
+#         mudir   = teacher.department.user_set.filter(role=Role.MUDIR).first()
+#         if mudir:
+#             Notification.objects.create(
+#                 recipient=mudir,
+#                 title="Yangi hujjat tasdiqlash uchun",
+#                 message=f"{teacher.get_full_name()} hujjat yukladi: «{instance.title}»",
+#                 url=reverse("doc_approve_detail", args=[instance.id])
+#             )
 
 
 @receiver(pre_save, sender=Document)

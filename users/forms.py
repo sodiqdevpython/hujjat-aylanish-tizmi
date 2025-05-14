@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from users.models import User, Department, AddRequirement, SubWorkPlan, MainWorkPlan
+from users.models import User, Department, AddRequirement, SubWorkPlan, MainWorkPlan, Document
 from users.choices import Role
 
 class LoginForm(forms.Form):
@@ -138,3 +138,87 @@ class ApproveForm(forms.Form):
     ACTIONS = [("approve", "Tasdiqlash"), ("reject", "Rad etish")]
     action  = forms.ChoiceField(choices=ACTIONS, widget=forms.RadioSelect)
     comment = forms.CharField(required=False, widget=forms.Textarea(attrs={"rows":3}))
+
+
+# ────────────────────────────────────────────────
+# 1.  HUJJAT YARATISH  (o‘qituvchi)
+# ────────────────────────────────────────────────
+class DocumentCreateForm(forms.ModelForm):
+    """
+    O‘qituvchi hujjat yuklash formasi.
+    requirement  —  o‘sha o‘qituvchiga tegishli AddRequirement lar.
+    """
+
+    class Meta:
+        model  = Document
+        fields = [
+            "title",
+            "short_description",
+            "document_type",
+            "file",
+            "image",
+            "requirement",
+        ]
+        widgets = {
+            "short_description": forms.Textarea(attrs={"rows": 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop("user")           # request.user majburiy
+        super().__init__(*args, **kwargs)
+
+        # Faqat shu o‘qituvchining rejalari
+        self.fields["requirement"].queryset = (
+            AddRequirement.objects
+            .filter(teacher=user)
+            .select_related("main_plan", "sub_plan")
+            .order_by("main_plan__name", "sub_plan__name")
+        )
+        self.fields["requirement"].required = False
+        self.fields["requirement"].label    = "Reja bandi (ixtiyoriy)"
+
+        # Barcha maydonlarga Bootstrap form-control klassi
+        for f in self.fields.values():
+            default_cls = "form-control-file" if isinstance(f.widget, forms.FileInput) else "form-control"
+            f.widget.attrs.setdefault("class", default_cls)
+
+
+# ────────────────────────────────────────────────
+# 2.  HUJJAT TAHRIRLASH  (pending holatda)
+# ────────────────────────────────────────────────
+class DocumentUpdateForm(DocumentCreateForm):
+    """
+    Pending hujjatni o‘zgartirish formasi.
+    Kerak bo‘lsa title readonly qilinadi.
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Misol: title ni o‘zgartirib bo‘lmasin desak:
+        # self.fields["title"].disabled = True
+
+
+# ────────────────────────────────────────────────
+# 3.  TASDIQLASH / RAD ETISH  (kafedra mudiri)
+# ────────────────────────────────────────────────
+class ApproveForm(forms.Form):
+    ACTION_CHOICES = (
+        ("approve", "Tasdiqlash"),
+        ("reject",  "Rad etish"),
+    )
+
+    action  = forms.ChoiceField(
+        choices=ACTION_CHOICES,
+        widget=forms.RadioSelect,
+        label="Amal"
+    )
+    comment = forms.CharField(
+        widget=forms.Textarea(attrs={"rows": 3}),
+        required=False,
+        label="Izoh (rad etish sababi)"
+    )
+
+    def clean(self):
+        cd = super().clean()
+        if cd.get("action") == "reject" and not cd.get("comment"):
+            self.add_error("comment", "Rad etish sababini kiriting.")
+        return cd
