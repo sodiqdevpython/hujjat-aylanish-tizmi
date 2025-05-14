@@ -1,0 +1,378 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>AFU</title>
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/images/logo.png">
+
+    <!-- Google Font: Source Sans Pro -->
+    <!-- <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback"> -->
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="/static/plugins/fontawesome-free/css/all.min.css">
+    <!-- Ionicons -->
+    <!-- Tempusdominus Bootstrap 4 -->
+    <link rel="stylesheet"
+        href="/static/plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css">
+    <!-- iCheck -->
+    <link rel="stylesheet" href="/static/plugins/icheck-bootstrap/icheck-bootstrap.min.css">
+    <!-- JQVMap -->
+    <link rel="stylesheet" href="/static/plugins/jqvmap/jqvmap.min.css">
+    <!-- Theme style -->
+    <link rel="stylesheet" href="/static/dist/css/adminlte.min.css">
+    <!-- overlayScrollbars -->
+    <link rel="stylesheet" href="/static/plugins/overlayScrollbars/css/OverlayScrollbars.min.css">
+    <!-- Daterange picker -->
+    <link rel="stylesheet" href="/static/plugins/daterangepicker/daterangepicker.css">
+    <!-- summernote -->
+    <link rel="stylesheet" href="/static/plugins/summernote/summernote-bs4.min.css">
+</head>
+
+<body class="hold-transition sidebar-mini layout-fixed">
+    <div class="wrapper">
+
+        <!-- Navbar -->
+        <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+            <!-- Left navbar links -->
+
+
+            <!-- Right navbar links -->
+            <ul class="navbar-nav ml-auto">
+                <!-- Navbar Search -->
+               
+
+                <!-- Messages Dropdown Menu -->             
+
+                <li class="nav-item">
+                    <a class="nav-link" data-widget="fullscreen" href="#" role="button">
+                        <i class="fas fa-expand-arrows-alt"></i>
+                    </a>
+                </li>
+                <div style="cursor: pointer;" class="user-panel d-flex z-10">
+                    <div class="image">
+                        <img src="/static/images/defaultUser.png" class="img-circle elevation-2"
+                            alt="User Image">
+                    </div>
+                    <div class="info">
+                        <a href="#" class="d-block">
+                            Sodiq Oydinov
+                        </a>
+                    </div>
+                </div>
+            </ul>
+        </nav>
+        <!-- /.navbar -->
+
+        <!-- Main Sidebar Container -->
+        <aside class="main-sidebar sidebar-dark-primary elevation-4">
+            <!-- Brand Logo -->
+            <a href="index3.html" class="brand-link">
+                <img src="/static/images/logo.png" alt="AdminLTE Logo" class="brand-image img-circle elevation-3"
+                    style="opacity: .8">
+                <span class="brand-text font-weight-light">AFU</span>
+            </a>
+
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <!-- Sidebar Menu -->
+                <nav class="mt-2">
+                    
+                    <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu"
+                        data-accordion="false">
+                        <!-- Add icons to the links using the .nav-icon class
+               with font-awesome or any other icon font library -->
+                        <li class="nav-item menu-open">
+                            <a href="/" class="nav-link">
+                                <i class="nav-icon fas fa-tachometer-alt"></i>
+                                <p>
+                                    Umumiy
+                                    <!-- <i class="right fas fa-angle-left"></i> -->
+                                </p>
+                            </a>
+                        </li>
+                        
+                            
+                                <li class="nav-item">
+                                    <a href="/teachers/" class="nav-link">
+                                        <i class="nav-icon fas fa-users"></i>
+                                        <p>
+                                            O'qituvchilar
+                                        </p>
+                                    </a>
+                                </li>
+                            
+
+                        
+                            <li class="nav-item">
+                                <a href="/ilmiy_ishlar_list/" class="nav-link">
+                                    <i class="nav-icon fas fa-database"></i>
+                                    <p>
+                                        Ilmiy ishlar
+                                    </p>
+                                </a>
+                            </li>
+                        
+                        
+                        
+                        <li class="nav-item">
+                            <a href="/work-plan/" class="nav-link">
+                                <i class="nav-icon fas fa-folder"></i>
+                                <p>
+                                    Ish reja
+                                </p>
+                            </a>
+                        </li>
+                        
+
+                        
+                        <li class="nav-item">
+                            <a href="/notifications/" class="nav-link">
+                                <i class="nav-icon fas fa-folder"></i>
+                                <p>
+                                    Bildirishnomalar
+                                </p>
+                            </a>
+                        </li>
+                        
+
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                <i class="nav-icon fas fa-sign-out-alt"></i>
+                                <p>Chiqish</p>
+                            </a>
+                        </li>
+
+                        <form id="logout-form" method="post" action="/logout/" style="display: none;">
+                            <input type="hidden" name="csrfmiddlewaretoken" value="awJn3TD5ObWQJA8bMgqCaQWaBn04DjlXOevuYFY8TwqZwOdd07zTuep9Bbv9Upuw">
+                        </form>
+
+
+                    </ul>
+                    
+                </nav>
+                <!-- /.sidebar-menu -->
+            </div>
+            <!-- /.sidebar -->
+        </aside>
+
+
+        
+
+<link rel="stylesheet" href="/static/plugins/chart.js/Chart.min.css">
+
+<div class="content-wrapper">
+  <!-- =====  MAIN  ===== -->
+  <section class="content">
+    <div class="container-fluid">
+
+      <!-- ───  INFO BOXES  ───────────────────────────── -->
+      <div class="row">
+        <div class="col-6 col-md-3">
+          <div class="info-box bg-info">
+            <span class="info-box-icon"><i class="fas fa-university"></i></span>
+            <div class="info-box-content">
+              <span class="info-box-text">Fakultetlar</span>
+              <span class="info-box-number">1</span>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="info-box bg-success">
+            <span class="info-box-icon"><i class="fas fa-building"></i></span>
+            <div class="info-box-content">
+              <span class="info-box-text">Kafedralar</span>
+              <span class="info-box-number">2</span>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="info-box bg-warning">
+            <span class="info-box-icon"><i class="fas fa-users"></i></span>
+            <div class="info-box-content">
+              <span class="info-box-text">Foydalanuvchilar</span>
+              <span class="info-box-number">8</span>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="info-box bg-danger">
+            <span class="info-box-icon"><i class="fas fa-file-alt"></i></span>
+            <div class="info-box-content">
+              <span class="info-box-text">Hujjatlar (kutilmoqda)</span>
+              <span class="info-box-number">1</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ───  CHARTS  ──────────────────────────────── -->
+      <div class="row">
+        <div class="col-md-6">
+          <div class="card card-outline card-primary shadow-sm">
+            <div class="card-header"><h3 class="card-title">Foydalanuvchilar rollari</h3></div>
+            <div class="card-body">
+              <canvas id="roleChart" style="height:280px"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card card-outline card-success shadow-sm">
+            <div class="card-header"><h3 class="card-title">Hujjatlar holati</h3></div>
+            <div class="card-body">
+              <canvas id="statusChart" style="height:280px"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ───  FACULTY → DEPARTMENT BREAKDOWN  ──────── -->
+      <div class="row">
+        <div class="col-md-4">
+          <div class="card card-outline card-info shadow-sm">
+            <div class="card-header"><h3 class="card-title">Fakultet / kafedra soni</h3></div>
+            <ul class="list-group list-group-flush">
+              
+                <li class="list-group-item d-flex justify-content-between">
+                  Raqamli texnalogiyalar <span class="badge badge-primary">2</span>
+                </li>
+              
+            </ul>
+          </div>
+        </div>
+
+        <!--  LAST 10 DOCS -->
+        <div class="col-md-8">
+          <div class="card card-outline card-secondary shadow-sm">
+            <div class="card-header"><h3 class="card-title">Oxirgi 10 ta hujjat</h3></div>
+            <div class="table-responsive">
+              <table class="table table-sm mb-0">
+                <thead class="thead-light">
+                  <tr>
+                    <th>Nomi</th><th>Turi</th><th>Yuklovchi</th><th>Sana</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  
+                    <tr>
+                      <td><a href="/ilmiy-ish/3/">python asoslari</a></td>
+                      <td>Scopus</td>
+                      <td>Zavqiddin Temirov</td>
+                      <td>13.05.2025</td>
+                    </tr>
+                  
+                    <tr>
+                      <td><a href="/ilmiy-ish/2/">Nimadir maqola</a></td>
+                      <td>Scopus</td>
+                      <td>Askar Mukimov</td>
+                      <td>13.05.2025</td>
+                    </tr>
+                  
+                    <tr>
+                      <td><a href="/ilmiy-ish/1/">C++</a></td>
+                      <td>Scopus</td>
+                      <td>Zavqiddin Temirov</td>
+                      <td>13.05.2025</td>
+                    </tr>
+                  
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+</div>
+
+<!-- ========== Chart.js ========== -->
+<script src="/static/plugins/chart.js/Chart.min.js"></script>
+<script>
+  // -------- Role pie -----------
+  const roleCtx = document.getElementById('roleChart').getContext('2d');
+  new Chart(roleCtx, {
+    type: 'pie',
+    data: {
+      labels: ['Kafedra mudiri', 'O‘qituvchi'],
+      datasets: [{
+        data: [1, 7],
+        backgroundColor: [
+          '#007bff','#28a745','#ffc107','#dc3545','#17a2b8','#6f42c1'
+        ],
+      }]
+    },
+    options: {responsive:true, maintainAspectRatio:false}
+  });
+
+  // -------- Status bar ----------
+  const statusCtx = document.getElementById('statusChart').getContext('2d');
+  new Chart(statusCtx, {
+    type: 'bar',
+    data: {
+      labels: ['Tasdiqlangan', 'Kutilmoqda'],
+      datasets: [{
+        label: 'Hujjat soni',
+        data: [2, 1],
+        backgroundColor: '#17a2b8'
+      }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      scales: {y: {beginAtZero:true}}
+    }
+  });
+</script>
+
+
+
+
+        <!-- /.content-wrapper -->
+
+
+        <!-- Control Sidebar -->
+        <aside class="control-sidebar control-sidebar-dark">
+            <!-- Control sidebar content goes here -->
+        </aside>
+        <!-- /.control-sidebar -->
+    </div>
+    <!-- ./wrapper -->
+
+    <!-- jQuery -->
+    <script src="/static/plugins/jquery/jquery.min.js"></script>
+    <!-- jQuery UI 1.11.4 -->
+    <script src="/static/plugins/jquery-ui/jquery-ui.min.js"></script>
+    <!-- Resolve conflict in jQuery UI tooltip with Bootstrap tooltip -->
+    <script>
+        $.widget.bridge('uibutton', $.ui.button)
+    </script>
+    <!-- Bootstrap 4 -->
+    <script src="/static/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <!-- ChartJS -->
+    <script src="/static/plugins/chart.js/Chart.min.js"></script>
+    <!-- Sparkline -->
+    <script src="/static/plugins/sparklines/sparkline.js"></script>
+    <!-- JQVMap -->
+    <script src="/static/plugins/jqvmap/jquery.vmap.min.js"></script>
+    <script src="/static/plugins/jqvmap/maps/jquery.vmap.usa.js"></script>
+    <!-- jQuery Knob Chart -->
+    <script src="/static/plugins/jquery-knob/jquery.knob.min.js"></script>
+    <!-- daterangepicker -->
+    <script src="/static/plugins/moment/moment.min.js"></script>
+    <script src="/static/plugins/daterangepicker/daterangepicker.js"></script>
+    <!-- Tempusdominus Bootstrap 4 -->
+    <script src="/static/plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js"></script>
+    <!-- Summernote -->
+    <script src="/static/plugins/summernote/summernote-bs4.min.js"></script>
+    <!-- overlayScrollbars -->
+    <script src="/static/plugins/overlayScrollbars/js/jquery.overlayScrollbars.min.js"></script>
+    <!-- AdminLTE App -->
+    <script src="/static/dist/js/adminlte.js"></script>
+    <!-- AdminLTE for demo purposes -->
+    <!-- AdminLTE dashboard demo (This is only for demo purposes) -->
+    <script src="/static/dist/js/pages/dashboard.js"></script>
+</body>
+
+</html>

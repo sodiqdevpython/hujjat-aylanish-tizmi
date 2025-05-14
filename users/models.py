@@ -71,6 +71,15 @@ class Document(BaseModel):
         related_name="documents",
         help_text="Agar hujjat aniq bir reja bandiga javob bersa tanlang."
     )
+    quantity_actual = models.DecimalField(
+        "Amalda miqdor",
+        max_digits=3, decimal_places=1,
+        default=1,
+        validators=[
+            MinValueValidator(0.1),
+            MaxValueValidator(5.0)
+        ]
+    )
     file = models.FileField(upload_to="document/")
     image = models.ImageField(upload_to="document_image/", **nb)
     document_type = models.ForeignKey(DocumentType, on_delete=models.CASCADE)
@@ -146,7 +155,7 @@ class WorkPlanSummary(BaseModel):
         unique_together = ('teacher','main_plan','sub_plan')
 
     def __str__(self):
-        return self.id
+        return str(self.id)
 
 class Notification(BaseModel):
     recipient = models.ForeignKey(User, on_delete=models.CASCADE)

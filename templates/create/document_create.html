@@ -2,18 +2,15 @@
 {% load static widget_tweaks %}
 {% block content %}
 
-<!-- Select2 CSS -->
 <link rel="stylesheet" href="{% static 'plugins/select2/css/select2.min.css' %}">
 <link rel="stylesheet" href="{% static 'plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css' %}">
 
 <div class="content-wrapper">
-  <!-- ===== HEADER ===== -->
+  <!-- HEADER -->
   <section class="content-header">
     <div class="container-fluid">
       <div class="row mb-2">
-        <div class="col-sm-6">
-          <h1>Yangi ilmiy ish yuklash</h1>
-        </div>
+        <div class="col-sm-6"><h1>Yangi ilmiy ish yuklash</h1></div>
         <div class="col-sm-6">
           <ol class="breadcrumb float-sm-right">
             <li class="breadcrumb-item"><a href="{% url 'my_documents' %}">Mening hujjatlarim</a></li>
@@ -24,14 +21,14 @@
     </div>
   </section>
 
-  <!-- ===== FORM ===== -->
+  <!-- FORM -->
   <section class="content">
     <div class="container-fluid">
       <div class="card card-primary shadow">
         <div class="card-header">
           <h3 class="card-title"><i class="fas fa-upload mr-2"></i> Hujjat ma’lumotlari</h3>
           {% if form.non_field_errors %}
-            <div class="alert alert-danger mb-0 mt-2 p-2">
+            <div class="alert alert-danger mt-2 mb-0 p-2">
               {% for err in form.non_field_errors %}{{ err }}{% endfor %}
             </div>
           {% endif %}
@@ -41,9 +38,9 @@
           {% csrf_token %}
           <div class="card-body">
             <div class="row">
-              <!-- LEFT COLUMN -->
+              <!-- LEFT -->
               <div class="col-md-6">
-                <!-- Title -->
+                <!-- 제목 -->
                 <div class="form-group">
                   <label>Nomi <span class="text-danger">*</span></label>
                   <div class="input-group">
@@ -53,14 +50,14 @@
                   {{ form.title.errors }}
                 </div>
 
-                <!-- Short description -->
+                <!-- Izoh -->
                 <div class="form-group">
                   <label>Qisqacha izoh</label>
                   {{ form.short_description|add_class:"form-control" }}
                   {{ form.short_description.errors }}
                 </div>
 
-                <!-- Document type -->
+                <!-- Turi -->
                 <div class="form-group">
                   <label>Ilmiy ish turi <span class="text-danger">*</span></label>
                   {{ form.document_type|add_class:"form-control select2" }}
@@ -68,23 +65,30 @@
                 </div>
               </div>
 
-              <!-- RIGHT COLUMN -->
+              <!-- RIGHT -->
               <div class="col-md-6">
-                <!-- File -->
+                <!-- Fayl -->
                 <div class="form-group">
-                  <label>Fayl (PDF, DOC... ) <span class="text-danger">*</span></label>
+                  <label>Fayl (PDF, DOC …) <span class="text-danger">*</span></label>
                   {{ form.file|add_class:"form-control-file" }}
                   {{ form.file.errors }}
                 </div>
 
-                <!-- Image -->
+                <!-- Rasm -->
                 <div class="form-group">
                   <label>Muqova rasmi (ixtiyoriy)</label>
                   {{ form.image|add_class:"form-control-file" }}
                   {{ form.image.errors }}
                 </div>
 
-                <!-- Requirement -->
+                <!-- Miqdor -->
+                <div class="form-group">
+                  <label>Amalda bajarilgan miqdor <span class="text-danger">*</span></label>
+                  {{ form.quantity_actual|add_class:"form-control" }}
+                  {{ form.quantity_actual.errors }}
+                </div>
+
+                <!-- Reja bandi -->
                 <div class="form-group">
                   <label>{{ form.requirement.label }}</label>
                   {{ form.requirement|add_class:"form-control select2" }}
@@ -108,11 +112,10 @@
   </section>
 </div>
 
-<!-- Select2 JS -->
 <script src="{% static 'plugins/select2/js/select2.full.min.js' %}"></script>
 <script>
   $(function () {
-    $('.select2').select2({ theme: 'bootstrap4' });
+    $('.select2').select2({theme: 'bootstrap4'});
   });
 </script>
 {% endblock %}

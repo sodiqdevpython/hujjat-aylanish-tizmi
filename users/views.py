@@ -578,9 +578,9 @@ def notification_list(request):
     page_obj    = paginator.get_page(page_number)
 
     # Sahifada ko‘rinayotgan xabarlarni o‘qilgan deb belgilash
-    visible_ids = [n.id for n in page_obj if not n.is_read]
-    if visible_ids:
-        Notification.objects.filter(id__in=visible_ids).update(is_read=True)
+    # visible_ids = [n.id for n in page_obj if not n.is_read]
+    # if visible_ids:
+    #     Notification.objects.filter(id__in=visible_ids).update(is_read=True)
 
     return render(request, "read/notifications-list.html", {"page_obj": page_obj})
 
