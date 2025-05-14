@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<div class="content-wrapper">
+  <section class="content-header">
+    <div class="container-fluid">
+      <h1 class="h4 mb-0">Mening ilmiy ishlarim</h1>
+    </div>
+  </section>
+
+  <section class="content">
+    <div class="container-fluid">
+
+      <!-- 🔍 Filter qismi -->
+      <form method="get" class="mb-4">
+        <div class="form-row align-items-end">
+          <div class="col-md-5">
+            <label for="search">Qidiruv</label>
+            <input type="text" name="q" id="search" class="form-control" value="{{ query }}" placeholder="Sarlavha yoki tavsif bo‘yicha qidirish...">
+          </div>
+          <div class="col-md-4">
+            <label for="status">Holat</label>
+            <select name="status" id="status" class="form-control">
+              <option value="">Barchasi</option>
+              <option value="approved" {% if selected_status == "approved" %}selected{% endif %}>Tasdiqlangan</option>
+              <option value="pending" {% if selected_status == "pending" %}selected{% endif %}>Kutilmoqda</option>
+              <option value="rejected" {% if selected_status == "rejected" %}selected{% endif %}>Rad etilgan</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <button type="submit" class="btn btn-primary btn-block mt-4">
+              <i class="fas fa-search"></i> Qidirish
+            </button>
+          </div>
+        </div>
+      </form>
+
+      <!-- 📄 Card grid qismi -->
+      <div class="row">
+        {% for doc in page_obj %}
+        <div class="col-sm-6 col-md-4 col-lg-3 mb-4">
+          <div class="card h-100 border-0 shadow-sm rounded overflow-hidden">
+            <!-- Rasm -->
+            {% if doc.image %}
+              <img src="{{ doc.image.url }}" class="card-img-top" style="height: 300px;">
+            {% else %}
+              <img src="{% static 'images/default-document.png' %}" class="card-img-top" style="height: 160px; object-fit: cover;">
+            {% endif %}
+
+            <!-- Kontent -->
+            <div class="card-body p-3">
+              <h6 class="mb-2 font-weight-bold text-truncate" title="{{ doc.title }}">{{ doc.title }}</h6>
+              <div class="small text-muted d-flex justify-content-between mb-2">
+                <span><strong>Tur:</strong> {{ doc.document_type.title }}</span>
+                {% if doc.status == 'approved' %}
+                  <span class="badge badge-success">Tasdiqlangan</span>
+                {% elif doc.status == 'pending' %}
+                  <span class="badge badge-warning">Kutilmoqda</span>
+                {% else %}
+                  <span class="badge badge-danger">Rad etilgan</span>
+                {% endif %}
+              </div>
+              <div class="small text-muted">
+                <i class="far fa-calendar-alt"></i> {{ doc.created|date:"d.m.Y" }}
+              </div>
+            </div>
+
+            <!-- Tugma -->
+            <div class="card-footer bg-white text-center py-2">
+              <a href="{% url 'ilmiy_ish_detail' doc.pk %}" class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-eye"></i> Batafsil
+              </a>
+            </div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center text-muted">Hozircha hech qanday hujjat mavjud emas.</div>
+        {% endfor %}
+      </div>
+
+      <!-- 📄 Pagination -->
+      {% if page_obj.has_other_pages %}
+      <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+          {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&status={{ selected_status }}">‹</a>
+          </li>
+          {% endif %}
+          {% for num in page_obj.paginator.page_range %}
+          <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+            <a class="page-link" href="?page={{ num }}&q={{ query }}&status={{ selected_status }}">{{ num }}</a>
+          </li>
+          {% endfor %}
+          {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}&status={{ selected_status }}">›</a>
+          </li>
+          {% endif %}
+        </ul>
+      </nav>
+      {% endif %}
+    </div>
+  </section>
+</div>
+{% endblock %}

@@ -24,5 +24,11 @@ urlpatterns = [
     path("notifications/", views.notification_list, name="notif_list"),
     path("doc/<int:pk>/approve/", views.doc_approve_detail, name="doc_approve_detail"),
 
+    #teacher
+    path('teacher-dashboard/', views.teacher_dashboard, name='teacher_dashboard'),
+    path("my-profile/", views.my_profile, name="my_profile"),
+    path("my-documents/", views.my_documents, name="my_documents"),
+    path("my-requirements/", views.my_requirements_view, name="my_requirements"),
+    path('teacher-notifications/', views.my_notifications, name='my_notifications'),
 
 ]

@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<link rel="stylesheet" href="{% static 'plugins/chart.js/Chart.min.css' %}">
+
+<div class="content-wrapper">
+
+  <!-- ===== MAIN ===== -->
+  <section class="content">
+    <div class="container-fluid">
+
+      <!-- ─── INFO BOXES ─────────────────────────── -->
+      <div class="row">
+        <div class="col-6 col-md-4">
+          <div class="info-box bg-success">
+            <span class="info-box-icon"><i class="fas fa-tasks"></i></span>
+            <div class="info-box-content">
+              <span class="info-box-text">Rejada bor</span>
+              <span class="info-box-number">{{ total_req_qty }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-4">
+          <div class="info-box bg-primary">
+            <span class="info-box-icon"><i class="fas fa-check"></i></span>
+            <div class="info-box-content">
+              <span class="info-box-text">Bajarilgan</span>
+              <span class="info-box-number">{{ total_done_qty }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-4">
+          <div class="info-box bg-warning">
+            <span class="info-box-icon"><i class="fas fa-chart-line"></i></span>
+            <div class="info-box-content">
+              <span class="info-box-text">Progress (%)</span>
+              <span class="info-box-number">{{ progress_pct }}%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── CHART + NOTIFICATIONS ──────────────── -->
+      <div class="row">
+        <!-- Chart hujjat statuslari -->
+        <div class="col-md-6">
+          <div class="card card-outline card-info shadow-sm">
+            <div class="card-header"><h3 class="card-title">Hujjatlar holati</h3></div>
+            <div class="card-body">
+              <canvas id="statusChart" style="height:260px"></canvas>
+            </div>
+          </div>
+        </div>
+        <!-- Oxirgi xabarlar -->
+        <div class="col-md-6">
+          <div class="card card-outline card-warning shadow-sm">
+            <div class="card-header"><h3 class="card-title">O‘qilmagan xabarlar</h3></div>
+            <ul class="list-group list-group-flush">
+              {% for n in unread_notifs %}
+                <li class="list-group-item">
+                  <a href="{{ n.url }}">{{ n.title }}</a><br>
+                  <small class="text-muted">{{ n.created|date:"d.m.Y H:i" }}</small>
+                </li>
+              {% empty %}
+                <li class="list-group-item text-muted">Hozircha xabar yo‘q</li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── RECENT DOCS TABLE ──────────────────── -->
+      <div class="row">
+        <div class="col-12">
+          <div class="card card-outline card-secondary shadow-sm">
+            <div class="card-header"><h3 class="card-title">Oxirgi yuklangan hujjatlar</h3></div>
+            <div class="table-responsive">
+              <table class="table table-sm mb-0">
+                <thead class="thead-light">
+                  <tr><th>Nomi</th><th>Turi</th><th>Holat</th><th>Sana</th></tr>
+                </thead>
+                <tbody>
+                  {% for d in recent_docs %}
+                    <tr>
+                      <td><a href="{% url 'ilmiy_ish_detail' d.id %}">{{ d.title|truncatechars:40 }}</a></td>
+                      <td>{{ d.document_type.title }}</td>
+                      <td>{{ d.get_status_display }}</td>
+                      <td>{{ d.created|date:"d.m.Y" }}</td>
+                    </tr>
+                  {% empty %}
+                    <tr><td colspan="4" class="text-center text-muted">Hujjat yo‘q</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+</div>
+
+<!-- ===== Chart.js ===== -->
+<script src="{% static 'plugins/chart.js/Chart.min.js' %}"></script>
+<script>
+const ctx = document.getElementById('statusChart').getContext('2d');
+new Chart(ctx, {
+  type: 'doughnut',
+  data: {
+    labels: [{% for k in doc_status %}'{{ k }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+    datasets: [{
+      data: [{% for v in doc_status.values %}{{ v }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+      backgroundColor: ['#28a745','#ffc107','#dc3545','#17a2b8']
+    }]
+  },
+  options:{responsive:true, maintainAspectRatio:false}
+});
+</script>
+
+{% endblock %}

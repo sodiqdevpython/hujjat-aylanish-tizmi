@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<div class="content-wrapper">
+  <section class="content-header">
+    <div class="container-fluid">
+      <h1 class="h4">Shaxsiy ish rejalari</h1>
+      <p class="text-muted">Quyidagi jadvalda sizga biriktirilgan ish rejalar va ularning bajarilishi ko‘rsatilgan</p>
+    </div>
+  </section>
+
+  <section class="content">
+    <div class="container-fluid">
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover">
+          <thead class="thead-light">
+            <tr>
+              <th>#</th>
+              <th>Asosiy reja (Plan)</th>
+              <th>Qo‘shimcha reja (SubPlan)</th>
+              <th>Talab (Reja)</th>
+              <th>Amalda bajarilgan</th>
+              <th>Holat</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in requirements %}
+              <tr class="{% if item.status == 'Yakunlangan' %}table-success{% else %}table-warning{% endif %}">
+                <td>{{ forloop.counter }}</td>
+                <td>{{ item.plan }}</td>
+                <td>{{ item.sub_plan }}</td>
+                <td>{{ item.planned }}</td>
+                <td>{{ item.actual }}</td>
+                <td><strong>{{ item.status }}</strong></td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="6" class="text-center text-muted">Hozircha hech qanday ish reja biriktirilmagan</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="content-wrapper">
+  <!-- ===== HEADER ===== -->
+  <section class="content-header">
+    <div class="container-fluid">
+      <h1 class="h4 mb-1">Mening profilim</h1>
+      <small class="text-muted">Shaxsiy ma’lumotlar va faoliyat</small>
+    </div>
+  </section>
+
+  <!-- ===== MAIN ===== -->
+  <section class="content">
+    <div class="container-fluid">
+      <div class="row">
+
+        <!-- LEFT COLUMN ================================================= -->
+        <div class="col-md-4">
+          <!-- Personal info -->
+          <div class="card card-info card-outline shadow-sm">
+            <div class="card-header"><h3 class="card-title">Shaxsiy ma’lumotlar</h3></div>
+            <div class="card-body text-center">
+              {% if user.image %}
+                <img src="{{ user.image.url }}" class="img-circle elevation-2 mb-2"
+                     style="width:120px;height:120px;object-fit:cover;">
+              {% else %}
+                <img src="{% static 'images/default-profile.png' %}" class="img-circle elevation-2 mb-2"
+                     style="width:120px;height:120px;object-fit:cover;">
+              {% endif %}
+              <h5>{{ user.get_full_name }}</h5>
+              <p class="text-muted mb-1">{{ user.department.title }}</p>
+
+              <table class="table table-sm table-borderless">
+                <tr><th>Login:</th><td>{{ user.username }}</td></tr>
+                <tr><th>Telefon:</th><td>{{ user.phone_number|default:"—" }}</td></tr>
+                <tr><th>Email:</th><td>{{ user.email|default:"—" }}</td></tr>
+                <tr><th>Lavozim:</th><td>{{ user.get_role_display }}</td></tr>
+              </table>
+            </div>
+          </div>
+
+          <!-- Unread notifications -->
+          <div class="card card-warning card-outline shadow-sm">
+            <div class="card-header"><h3 class="card-title">O‘qilmagan xabarlar</h3></div>
+            <ul class="list-group list-group-flush">
+              {% for n in unread_notifs %}
+                <li class="list-group-item">
+                  <a href="{{ n.url }}">{{ n.title }}</a><br>
+                  <small class="text-muted">{{ n.created|date:"d.m.Y H:i" }}</small>
+                </li>
+              {% empty %}
+                <li class="list-group-item text-muted">Xabar yo‘q</li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN ================================================= -->
+        <div class="col-md-8">
+          <div class="card card-outline card-primary shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <h3 class="card-title">Mening ilmiy ishlarim</h3>
+              <!-- Filter form -->
+              <form method="get" class="form-inline">
+                <input type="text" name="q" value="{{ query }}" class="form-control form-control-sm mr-2"
+                       placeholder="Qidirish">
+                <select name="type" class="form-control form-control-sm mr-2">
+                  <option value="">Turini tanlang</option>
+                  {% for dt in doc_types %}
+                    <option value="{{ dt.id }}" {% if selected_type == dt.id|stringformat:'s' %}selected{% endif %}>
+                      {{ dt.title }}
+                    </option>
+                  {% endfor %}
+                </select>
+                <button class="btn btn-sm btn-info">OK</button>
+              </form>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table table-sm mb-0">
+                <thead class="thead-light">
+                  <tr><th>Nomi</th><th>Turi</th><th>Holat</th><th>Sana</th></tr>
+                </thead>
+                <tbody>
+                  {% for d in page_obj %}
+                    <tr>
+                      <td><a href="{% url 'ilmiy_ish_detail' d.id %}">{{ d.title|truncatechars:50 }}</a></td>
+                      <td>{{ d.document_type.title }}</td>
+                      <td>{{ d.get_status_display }}</td>
+                      <td>{{ d.created|date:"d.m.Y" }}</td>
+                    </tr>
+                  {% empty %}
+                    <tr><td colspan="4" class="text-center text-muted">Hujjat topilmadi</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Paginator -->
+            {% if page_obj.has_other_pages %}
+              <div class="card-footer p-2">
+                <nav>
+                  <ul class="pagination pagination-sm mb-0 justify-content-center">
+                    {% if page_obj.has_previous %}
+                      <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&type={{ selected_type }}">‹</a>
+                      </li>
+                    {% endif %}
+                    {% for num in page_obj.paginator.page_range %}
+                      <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                        <a class="page-link" href="?page={{ num }}&q={{ query }}&type={{ selected_type }}">{{ num }}</a>
+                      </li>
+                    {% endfor %}
+                    {% if page_obj.has_next %}
+                      <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}&type={{ selected_type }}">›</a>
+                      </li>
+                    {% endif %}
+                  </ul>
+                </nav>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+</div>
+
+{% endblock %}

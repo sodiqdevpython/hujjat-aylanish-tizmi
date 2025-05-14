@@ -79,6 +79,7 @@
             <div class="sidebar">
                 <!-- Sidebar Menu -->
                 <nav class="mt-2">
+                    {% if request.user.is_authenticated %}
                     <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu"
                         data-accordion="false">
                         <!-- Add icons to the links using the .nav-icon class
@@ -92,25 +93,39 @@
                                 </p>
                             </a>
                         </li>
+                        
+                            {% if request.user.role != "oqituvchi" %}
+                                <li class="nav-item">
+                                    <a href="{% url 'teacher_list' %}" class="nav-link">
+                                        <i class="nav-icon fas fa-users"></i>
+                                        <p>
+                                            O'qituvchilar
+                                        </p>
+                                    </a>
+                                </li>
+                            {% endif %}
 
-                        <li class="nav-item">
-                            <a href="{% url 'teacher_list' %}" class="nav-link">
-                                <i class="nav-icon fas fa-users"></i>
-                                <p>
-                                    O'qituvchilar
-                                </p>
-                            </a>
-                        </li>
-
-                        <li class="nav-item">
-                            <a href="{% url 'ilmiy_ishlar_list' %}" class="nav-link">
-                                <i class="nav-icon fas fa-database"></i>
-                                <p>
-                                    Ilmiy ishlar
-                                </p>
-                            </a>
-                        </li>
-
+                        {% if request.user.role != "oqituvchi" %}
+                            <li class="nav-item">
+                                <a href="{% url 'ilmiy_ishlar_list' %}" class="nav-link">
+                                    <i class="nav-icon fas fa-database"></i>
+                                    <p>
+                                        Ilmiy ishlar
+                                    </p>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="nav-item">
+                                <a href="{% url 'my_documents' %}" class="nav-link">
+                                    <i class="nav-icon fas fa-database"></i>
+                                    <p>
+                                        Ilmiy ishlar
+                                    </p>
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        {% if request.user.role != "oqituvchi" %}
                         <li class="nav-item">
                             <a href="{% url 'work_plan_report' %}" class="nav-link">
                                 <i class="nav-icon fas fa-folder"></i>
@@ -119,7 +134,18 @@
                                 </p>
                             </a>
                         </li>
+                        {% else %}
+                        <li class="nav-item">
+                            <a href="{% url 'my_requirements' %}" class="nav-link">
+                                <i class="nav-icon fas fa-folder"></i>
+                                <p>
+                                    Ish reja
+                                </p>
+                            </a>
+                        </li>
+                        {% endif %}
 
+                        {% if request.user.role != "oqituvchi" %}
                         <li class="nav-item">
                             <a href="{% url 'notif_list' %}" class="nav-link">
                                 <i class="nav-icon fas fa-folder"></i>
@@ -128,6 +154,16 @@
                                 </p>
                             </a>
                         </li>
+                        {% else %}
+                            <li class="nav-item">
+                                <a href="{% url 'my_notifications' %}" class="nav-link">
+                                    <i class="nav-icon fas fa-folder"></i>
+                                    <p>
+                                        Bildirishnomalar
+                                    </p>
+                                </a>
+                            </li>
+                        {% endif %}
 
                         <li class="nav-item">
                             <a href="#" class="nav-link" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
@@ -142,6 +178,7 @@
 
 
                     </ul>
+                    {% endif %}
                 </nav>
                 <!-- /.sidebar-menu -->
             </div>

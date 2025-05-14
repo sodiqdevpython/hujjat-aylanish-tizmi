@@ -7,12 +7,11 @@ from .choices import Role, DocumentStatus
 from .models import User, Faculty, Department, Document, DocumentType, MainWorkPlan, AddRequirement, PlanResponse, SendRequest, Notification
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView
-from django.db.models import Count
 from datetime import datetime
 from calendar import month_name
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import Q, Count
+from django.db.models import Q, Count, Sum
 from django.views.decorators.http import require_POST
 from collections import defaultdict
 from decimal import Decimal
@@ -90,6 +89,11 @@ class TeacherListView(LoginRequiredMixin, ListView):
             "selected_dept_id": self.request.GET.get("department_id", ""),
         })
         return ctx
+    
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.role == Role.OQITUVCHI:
+            return HttpResponseForbidden("O'qituvchiga bu sahifaga kirish mumkin emas")
+        return super().dispatch(request, *args, **kwargs)
     
 @login_required
 def create_teacher(request):
@@ -658,4 +662,160 @@ def dashboard(request):
         "recent_docs": recent_docs,
     }
     return render(request, "read/admin_dashboard.html", context)
+
+
+@login_required
+def teacher_dashboard(request):
+    # 1) faqat O‘QITUVCHI roli
+    if request.user.role != Role.OQITUVCHI:
+        return HttpResponseForbidden()
+
+    user = request.user
+
+    # 2) Rejalar va amalda bajarilgan ishlar
+    req_qs   = AddRequirement.objects.filter(teacher=user)
+    resp_qs  = PlanResponse.objects.filter(requirement__teacher=user)
+
+    total_req_cnt   = req_qs.count()
+    total_req_qty   = req_qs.aggregate(q=Sum("quantity_planned"))["q"] or 0
+
+    total_done_qty  = resp_qs.aggregate(q=Sum("quantity_actual"))["q"] or 0
+    progress_pct    = round((total_done_qty / total_req_qty) * 100, 1) if total_req_qty else 0
+
+    # 3) Hujjat statuslari
+    status_map = dict(DocumentStatus.choices)   # {'approved':'Tasdiqlangan', ...}
+    raw_status = (
+        Document.objects
+        .filter(upload_user=user)
+        .values("status")
+        .annotate(total=Count("id"))
+    )
+    doc_status = { name:0 for name in status_map.values() }   # default 0
+    for row in raw_status:
+        doc_status[ status_map[row["status"]] ] = row["total"]
+
+    # 4) Oxirgi xabarlar (o‘qilmagan Rejection + umumiy)
+    unread_notifs = Notification.objects.filter(recipient=user, is_read=False)[:10]
+
+    # 5) Oxirgi 6 ta hujjat
+    recent_docs = (
+        Document.objects
+        .filter(upload_user=user)
+        .select_related("document_type")
+        .order_by("-created")[:6]
+    )
+
+    ctx = {
+        "total_req_cnt": total_req_cnt,
+        "total_req_qty": total_req_qty,
+        "total_done_qty": total_done_qty,
+        "progress_pct": progress_pct,
+        "doc_status": doc_status,
+        "unread_notifs": unread_notifs,
+        "recent_docs": recent_docs,
+    }
+    return render(request, "read/teacher_dashboard.html", ctx)
+
+
+@login_required
+def my_profile(request):
+    user = request.user
+
+    # ----- 1.  O‘qilmagan xabarlar (eng ko‘pi 15 ta) -----
+    unread_notifs = Notification.objects.filter(
+        recipient=user, is_read=False
+    ).order_by("-created")[:15]
+
+    # ----- 2.  Hujjatlar ro‘yxati + filtr -----
+    query     = request.GET.get("q", "")
+    type_id   = request.GET.get("type", "")
+
+    docs_qs = Document.objects.filter(upload_user=user).select_related("document_type")
+
+    if query:
+        docs_qs = docs_qs.filter(
+            Q(title__icontains=query) |
+            Q(short_description__icontains=query)
+        )
+    if type_id:
+        docs_qs = docs_qs.filter(document_type_id=type_id)
+
+    paginator   = Paginator(docs_qs.order_by("-created"), 10)
+    page_number = request.GET.get("page")
+    page_obj    = paginator.get_page(page_number)
+
+    context = {
+        "unread_notifs": unread_notifs,
+        "page_obj": page_obj,
+        "doc_types": DocumentType.objects.all(),
+        "selected_type": type_id,
+        "query": query,
+    }
+    return render(request, "read/my_profile.html", context)
+
+
+@login_required
+def my_documents(request):
+    docs = Document.objects.filter(upload_user=request.user)
+    query = request.GET.get("q", "")
+    status = request.GET.get("status", "")
+
+    if query:
+        docs = docs.filter(
+            Q(title__icontains=query) |
+            Q(short_description__icontains=query)
+        )
+    if status:
+        docs = docs.filter(status=status)
+
+    paginator = Paginator(docs.order_by("-created"), 9)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, "read/my_documents.html", {
+        "page_obj": page_obj,
+        "query": query,
+        "selected_status": status
+    })
+
+
+@login_required
+def my_requirements_view(request):
+    teacher = request.user
+
+    # Barcha biriktirilgan talablar va ularning javoblari
+    requirements = AddRequirement.objects.filter(teacher=teacher).select_related("main_plan", "sub_plan")
+
+    data = []
+    for req in requirements:
+        actual = PlanResponse.objects.filter(requirement=req).aggregate(
+            total=Sum("quantity_actual")
+        )["total"] or 0
+
+        data.append({
+            "plan": req.main_plan.name if req.main_plan else "-",
+            "sub_plan": req.sub_plan.name if req.sub_plan else "-",
+            "planned": req.quantity_planned,
+            "actual": actual,
+            "status": "Yakunlangan" if actual >= req.quantity_planned else "Yetmagan"
+        })
+
+    return render(request, "read/my_requirements.html", {"requirements": data})
+
+
+@login_required
+def my_notifications(request):
+    qs = Notification.objects.filter(recipient=request.user).order_by("-created")
+
+    paginator = Paginator(qs, 20)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    # O‘qilgan deb belgilash
+    unread_ids = [n.id for n in page_obj if not n.is_read]
+    if unread_ids:
+        Notification.objects.filter(id__in=unread_ids).update(is_read=True)
+
+    return render(request, "read/my_notifications.html", {"page_obj": page_obj})
+
 

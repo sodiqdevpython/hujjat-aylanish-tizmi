@@ -138,4 +138,3 @@ class ApproveForm(forms.Form):
     ACTIONS = [("approve", "Tasdiqlash"), ("reject", "Rad etish")]
     action  = forms.ChoiceField(choices=ACTIONS, widget=forms.RadioSelect)
     comment = forms.CharField(required=False, widget=forms.Textarea(attrs={"rows":3}))
-
