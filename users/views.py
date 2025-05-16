@@ -92,7 +92,7 @@ class TeacherListView(LoginRequiredMixin, ListView):
     
     def dispatch(self, request, *args, **kwargs):
         if request.user.role == Role.OQITUVCHI:
-            return HttpResponseForbidden("O'qituvchiga bu sahifaga kirish mumkin emas")
+            return HttpResponseForbidden("Talabaga bu sahifaga kirish mumkin emas")
         return super().dispatch(request, *args, **kwargs)
     
 @login_required
@@ -358,7 +358,7 @@ def work_plan_report(request):
             cell = stat[(t.id, mp.id, sp.id if sp else None)]
             row_cells.append(cell)
         table_rows.append({"idx": idx, "teacher": t, "cells": row_cells})
-    paginator = Paginator(table_rows, 100)  # har sahifada 100 o'qituvchi
+    paginator = Paginator(table_rows, 100)  # har sahifada 100 Talaba
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
@@ -473,7 +473,7 @@ def work_plan_export(request):
         ws.cell(row, col+1, "Amalda").fill = gray; ws.cell(row, col+1).font = bold; ws.cell(row, col+1).alignment = center
         col += 2
 
-    # === 4-b  O‘qituvchi satrlari ===
+    # === 4-b  Talaba satrlari ===
     excel_row = 4
     idx = 1
     for t in teachers:
@@ -550,7 +550,7 @@ def doc_approve_detail(request, pk):
 
                 doc.status = DocumentStatus.REJECTED
                 doc.save()
-            # bildirshnoma: o‘qituvchiga
+            # bildirshnoma: Talabaga
             Notification.objects.create(
                 recipient=doc.upload_user,
                 title=f"Hujjat {'tasdiqlandi' if action=='approve' else 'rad etildi'}",
@@ -666,7 +666,7 @@ def dashboard(request):
 
 @login_required
 def teacher_dashboard(request):
-    # 1) faqat O‘QITUVCHI roli
+    # 1) faqat Talaba roli
     if request.user.role != Role.OQITUVCHI:
         return HttpResponseForbidden()
 

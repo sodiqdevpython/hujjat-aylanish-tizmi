@@ -34,7 +34,7 @@ class Migration(migrations.Migration):
                 ('last_name', models.CharField(max_length=100, verbose_name='Familiya')),
                 ('phone_number', models.CharField(max_length=20, verbose_name='Telefon raqam')),
                 ('image', models.ImageField(blank=True, null=True, upload_to='user_images/', verbose_name='Rasm')),
-                ('role', models.CharField(choices=[('superadmin', 'Superadmin'), ('prorektor', 'Prorektor'), ('dekan', 'Dekan'), ('mudir', 'Kafedra mudiri'), ('oqituvchi', 'O‘qituvchi')], default='oqituvchi', max_length=20, verbose_name='Roli')),
+                ('role', models.CharField(choices=[('superadmin', 'Superadmin'), ('prorektor', 'Prorektor'), ('dekan', 'Dekan'), ('mudir', 'Kafedra mudiri'), ('oqituvchi', 'Talaba')], default='oqituvchi', max_length=20, verbose_name='Roli')),
             ],
             options={
                 'verbose_name': 'user',

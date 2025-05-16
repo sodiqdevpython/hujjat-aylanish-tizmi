@@ -104,7 +104,7 @@ class SubWorkPlan(BaseModel):
     def __str__(self):
         return self.name
 
-# Reja biriktirish (kafedra mudiri -> o'qituvchi)
+# Reja biriktirish (kafedra mudiri -> Talaba)
 class AddRequirement(BaseModel):
     author = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, related_name='requirements_authored')
     teacher = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, related_name='requirements_received')

@@ -43,7 +43,7 @@ class TeacherCreateForm(UserCreationForm):
         self.fields['image'].required = True
         self.fields['phone_number'].required = True
         self.fields['department'].required = True
-        self.instance.role = Role.OQITUVCHI  # Doim o'qituvchi rolida saqlanadi
+        self.instance.role = Role.OQITUVCHI  # Doim Talaba rolida saqlanadi
 
         if user and user.role == Role.MUDIR:
             # Faqat o‘z kafedrasiga foydalanuvchi qo‘shadi
@@ -141,12 +141,12 @@ class ApproveForm(forms.Form):
 
 
 # ────────────────────────────────────────────────
-# 1.  HUJJAT YARATISH  (o‘qituvchi)
+# 1.  HUJJAT YARATISH  (Talaba)
 # ────────────────────────────────────────────────
 class DocumentCreateForm(forms.ModelForm):
     """
-    O‘qituvchi hujjat yuklash formasi.
-    requirement  —  o‘sha o‘qituvchiga tegishli AddRequirement lar.
+    Talaba hujjat yuklash formasi.
+    requirement  —  o‘sha Talabaga tegishli AddRequirement lar.
     """
     quantity_actual = forms.DecimalField(
         label="Amalda bajarilgan miqdor",
@@ -174,7 +174,7 @@ class DocumentCreateForm(forms.ModelForm):
         initial = self.initial.get("quantity_actual", 0)
         self.initial["quantity_actual"] = float(initial) - 1.0
         print(self.initial["quantity_actual"], "Shu yerda")
-        # Faqat shu o‘qituvchining rejalari
+        # Faqat shu Talabaning rejalari
         self.fields["requirement"].queryset = (
             AddRequirement.objects
             .filter(teacher=user)

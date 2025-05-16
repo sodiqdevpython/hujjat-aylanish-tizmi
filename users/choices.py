@@ -6,7 +6,7 @@ class Role(models.TextChoices):
     PROREKTOR = "prorektor", "Prorektor"
     DEKAN = "dekan", "Dekan"
     MUDIR = "mudir", "Kafedra mudiri"
-    OQITUVCHI = "oqituvchi", "O‘qituvchi"
+    OQITUVCHI = "oqituvchi", "Talaba"
 
 class DocumentStatus(models.TextChoices):
     PENDING = "pending", "Kutilmoqda"
