@@ -58,6 +58,7 @@
               </p>
               <p><strong>Tizimga qo'shildi:</strong> {{ document.created|date:"d.m.Y" }}</p>
               <p><strong>Yuklovchi:</strong> {{ document.upload_user.get_full_name }}</p>
+              <p><strong>Miqdori:</strong> {{ document.quantity_actual }}</p>
 
               {% if document.short_description %}
                 <hr>

@@ -3,7 +3,6 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 from utils.models import BaseModel
 from . import choices
-from utils.time import current_year
 
 
 nb = dict(null=True, blank=True)
@@ -118,7 +117,10 @@ class AddRequirement(BaseModel):
     )
 
     def __str__(self):
-        return f"{self.teacher} - {self.sub_plan} - {self.quantity_planned}"
+        if self.sub_plan:
+            return f"{self.teacher} - {self.sub_plan} - {self.quantity_planned}"
+        else:
+            return f"{self.teacher} - {self.main_plan} - {self.quantity_planned}"
 
 # Amalda bajarilgan ishlar (tasdiqlangan hujjat asosida)
 class PlanResponse(BaseModel):

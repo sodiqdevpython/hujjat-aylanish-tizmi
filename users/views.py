@@ -835,14 +835,14 @@ def document_create(request):
             doc.save()
 
             # kafedra mudiriga xabar
-            mudir = request.user.department.user_set.filter(role=Role.MUDIR).first()
-            if mudir:
-                Notification.objects.create(
-                    recipient=mudir,
-                    title="Tasdiqlash uchun yangi hujjat",
-                    message=f"{request.user.get_full_name()} «{doc.title}» yukladi",
-                    url=reverse("doc_approve_detail", args=[doc.id])
-                )
+            # mudir = request.user.department.user_set.filter(role=Role.MUDIR).first()
+            # if mudir:
+            #     Notification.objects.create(
+            #         recipient=mudir,
+            #         title="Tasdiqlash uchun yangi hujjat",
+            #         message=f"{request.user.get_full_name()} «{doc.title}» yukladi",
+            #         url=reverse("doc_approve_detail", args=[doc.id])
+            #     )
             return redirect("my_documents")
     else:
         form =forms.DocumentCreateForm(user=request.user)

@@ -150,7 +150,7 @@ class DocumentCreateForm(forms.ModelForm):
     """
     quantity_actual = forms.DecimalField(
         label="Amalda bajarilgan miqdor",
-        min_value=0.1, max_value=5, decimal_places=1,
+        min_value=0.1, max_value=1, decimal_places=1,
         widget=forms.NumberInput(attrs={"step": "0.1"})
     )
     class Meta:
@@ -172,8 +172,7 @@ class DocumentCreateForm(forms.ModelForm):
         user = kwargs.pop("user")           # request.user majburiy
         super().__init__(*args, **kwargs)
         initial = self.initial.get("quantity_actual", 0)
-        self.initial["quantity_actual"] = float(initial) - 1.0
-        print(self.initial["quantity_actual"], "Shu yerda")
+        self.initial["quantity_actual"] = float(initial)
         # Faqat shu o‘qituvchining rejalari
         self.fields["requirement"].queryset = (
             AddRequirement.objects
@@ -181,8 +180,8 @@ class DocumentCreateForm(forms.ModelForm):
             .select_related("main_plan", "sub_plan")
             .order_by("main_plan__name", "sub_plan__name")
         )
-        self.fields["requirement"].required = False
-        self.fields["requirement"].label    = "Reja bandi (ixtiyoriy)"
+        self.fields["requirement"].required = True
+        self.fields["requirement"].label    = "Reja bandi"
 
         # Barcha maydonlarga Bootstrap form-control klassi
         for f in self.fields.values():

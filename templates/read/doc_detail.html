@@ -36,6 +36,7 @@
               <ul class="list-unstyled small">
                 <li><strong>Turi:</strong> {{ doc.document_type.title }}</li>
                 <li><strong>Holat:</strong> {{ doc.get_status_display }}</li>
+                <li><strong>Miqdor:</strong> {{ doc.quantity_actual }}</li>
                 <li><strong>Sana:</strong> {{ doc.created|date:"d.m.Y H:i" }}</li>
               </ul>
               {% if doc.short_description %}

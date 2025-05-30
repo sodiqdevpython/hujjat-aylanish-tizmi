@@ -25,8 +25,6 @@ def _refresh_summary(teacher, sub):
     actual  = PlanResponse.objects.filter(
         requirement__teacher=teacher, requirement__sub_plan=sub
     ).aggregate(s=Sum("quantity_actual"))["s"] or Decimal("0")
-    print(actual)
-    print(planned)
 
     obj, _ = WorkPlanSummary.objects.get_or_create(
         teacher=teacher, main_plan=mp, sub_plan=sub
@@ -123,9 +121,9 @@ def handle_document_status(sender, instance, **kw):
         instance.is_confirmed = False
         instance.save(update_fields=["is_confirmed"])
 
-        Notification.objects.create(
-            recipient=instance.upload_user,
-            title="Hujjat rad etildi",
-            message="Hujjatingiz rad etildi, iltimos tuzatib qayta yuboring.",
-            url=reverse("ilmiy_ish_detail", args=[instance.id])
-        )
+        # Notification.objects.create(
+        #     recipient=instance.upload_user,
+        #     title="Hujjat rad etildi",
+        #     message="Hujjatingiz rad etildi, iltimos tuzatib qayta yuboring.",
+        #     url=reverse("ilmiy_ish_detail", args=[instance.id])
+        # )
