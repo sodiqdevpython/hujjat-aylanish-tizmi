@@ -21,6 +21,14 @@
         </option>
       {% endfor %}
     </select>
+        <select name="year" class="form-control mr-2">
+    <option value="">Barcha yillar</option>
+    {% for y in years %}
+      <option value="{{ y.id }}"{% if y.id|stringformat:'s' == selected_year %} selected{% endif %}>
+        {{ y.begin }}-{{ y.end }}
+      </option>
+    {% endfor %}
+  </select>
     <button class="btn btn-primary">Ko‘rsatish</button>
   </form>
   <a href="{% url 'work_plan_export' %}?faculty={{ selected_faculty }}&department={{ selected_department }}"

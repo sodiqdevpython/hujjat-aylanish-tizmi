@@ -4,12 +4,12 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from utils.models import BaseModel
 from . import choices
 
-
 nb = dict(null=True, blank=True)
+
 
 class AcademicYear(models.Model):
     begin = models.PositiveIntegerField()
-    end   = models.PositiveIntegerField()
+    end = models.PositiveIntegerField()
 
     class Meta:
         unique_together = ("begin", "end")
@@ -18,12 +18,14 @@ class AcademicYear(models.Model):
     def __str__(self):
         return f"{self.begin}-{self.end}"
 
+
 # Fakultet
 class Faculty(BaseModel):
     title = models.CharField(max_length=256, unique=True)
 
     def __str__(self):
         return self.title
+
 
 # Kafedra
 class Department(BaseModel):
@@ -32,6 +34,7 @@ class Department(BaseModel):
 
     def __str__(self):
         return self.title
+
 
 # Foydalanuvchi rollari
 class User(AbstractUser):
@@ -46,12 +49,14 @@ class User(AbstractUser):
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
 
+
 # Ilmiy ish turi
 class DocumentType(BaseModel):
     title = models.CharField(max_length=256, unique=True)
 
     def __str__(self):
         return self.title
+
 
 # Ilmiy ish (hujjat)
 class Document(BaseModel):
@@ -63,7 +68,7 @@ class Document(BaseModel):
     )
     url = models.URLField(**nb)
     short_description = models.TextField(**nb)
-    requirement  = models.ForeignKey(           # <─ YANGI!
+    requirement = models.ForeignKey(  # <─ YANGI!
         "users.AddRequirement",
         on_delete=models.SET_NULL,
         null=True, blank=True,
@@ -88,12 +93,14 @@ class Document(BaseModel):
     def __str__(self):
         return self.title
 
+
 # Ish rejasining asosiy guruhi (Scopus, Konferensiya va h.k.)
 class MainWorkPlan(BaseModel):
     name = models.CharField(max_length=64, unique=True)
 
     def __str__(self):
         return self.name
+
 
 # Har bir rejaning pastki toifasi (Respublika konferensiyasi, Darslik, Dasturiy guvohnoma)
 class SubWorkPlan(BaseModel):
@@ -103,18 +110,21 @@ class SubWorkPlan(BaseModel):
     def __str__(self):
         return self.name
 
+
 # Reja biriktirish (kafedra mudiri -> o'qituvchi)
 class AddRequirement(BaseModel):
     author = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, related_name='requirements_authored')
-    teacher = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, related_name='requirements_received')
+    teacher = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True,
+                                related_name='requirements_received')
     sub_plan = models.ForeignKey(SubWorkPlan, on_delete=models.CASCADE, **nb)
     main_plan = models.ForeignKey(MainWorkPlan, on_delete=models.CASCADE, null=True)
     quantity_planned = models.DecimalField("Reja (miqdor)", max_digits=3, decimal_places=1,
-        validators=[
-            MaxValueValidator(5, message="5 tadan ortiq bo'lishi mumkin emas"),
-            MinValueValidator(0.3, message="0.3 dan past bo'lishi mumkin emas")
-        ]
-    )
+                                           validators=[
+                                               MaxValueValidator(5, message="5 tadan ortiq bo'lishi mumkin emas"),
+                                               MinValueValidator(0.3, message="0.3 dan past bo'lishi mumkin emas")
+                                           ]
+                                           )
+    academic_year = models.ForeignKey("users.AcademicYear", on_delete=models.CASCADE, **nb)
 
     def __str__(self):
         if self.sub_plan:
@@ -122,14 +132,17 @@ class AddRequirement(BaseModel):
         else:
             return f"{self.teacher} - {self.main_plan} - {self.quantity_planned}"
 
+
 # Amalda bajarilgan ishlar (tasdiqlangan hujjat asosida)
 class PlanResponse(BaseModel):
     requirement = models.ForeignKey(AddRequirement, on_delete=models.CASCADE, related_name='responses')
     document = models.ForeignKey(Document, on_delete=models.CASCADE, limit_choices_to={'is_confirmed': True})
     quantity_actual = models.DecimalField("Amalda (miqdor)", max_digits=3, decimal_places=1, default=1)
+    academic_year = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, **nb)
 
     def __str__(self):
         return f"{self.document} => {self.quantity_actual}"
+
 
 # Hujjatni tasdiqlash jarayoni (SendRequest orqali)
 class SendRequest(BaseModel):
@@ -146,18 +159,20 @@ class SendRequest(BaseModel):
     def __str__(self):
         return f"{self.document} - {self.status}"
 
+
 class WorkPlanSummary(BaseModel):
     teacher = models.ForeignKey(User, on_delete=models.CASCADE)
     main_plan = models.ForeignKey(MainWorkPlan, on_delete=models.CASCADE)
-    sub_plan  = models.ForeignKey(SubWorkPlan, on_delete=models.CASCADE)
+    sub_plan = models.ForeignKey(SubWorkPlan, on_delete=models.CASCADE)
     total_planned = models.DecimalField(max_digits=5, decimal_places=1, default=0)
-    total_actual  = models.DecimalField(max_digits=5, decimal_places=1, default=0)
+    total_actual = models.DecimalField(max_digits=5, decimal_places=1, default=0)
 
     class Meta:
-        unique_together = ('teacher','main_plan','sub_plan')
+        unique_together = ('teacher', 'main_plan', 'sub_plan')
 
     def __str__(self):
         return str(self.id)
+
 
 class Notification(BaseModel):
     recipient = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -168,5 +183,3 @@ class Notification(BaseModel):
 
     def __str__(self):
         return self.title
-
-

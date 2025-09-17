@@ -4,7 +4,7 @@ from django.contrib.auth.forms import UserChangeForm, UserCreationForm
 from .models import (
     Faculty, Department, User, DocumentType, Document,
     MainWorkPlan, SubWorkPlan, AddRequirement, PlanResponse, 
-    SendRequest, WorkPlanSummary, Notification
+    SendRequest, WorkPlanSummary, Notification, AcademicYear
 )
 
 # Fakultet
@@ -99,3 +99,4 @@ class SendRequestAdmin(admin.ModelAdmin):
 admin.site.register(WorkPlanSummary)
 
 admin.site.register(Notification)
+admin.site.register(AcademicYear)

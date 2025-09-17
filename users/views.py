@@ -4,7 +4,8 @@ from django.contrib.auth import authenticate, login
 from django.http import HttpResponseForbidden
 from . import forms
 from .choices import Role, DocumentStatus
-from .models import User, Faculty, Department, Document, DocumentType, MainWorkPlan, AddRequirement, PlanResponse, SendRequest, Notification
+from .models import User, Faculty, Department, Document, DocumentType, MainWorkPlan, AddRequirement, PlanResponse, \
+    SendRequest, Notification, AcademicYear
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView
 from datetime import datetime
@@ -49,7 +50,7 @@ def login_view(request):
 
 class TeacherListView(LoginRequiredMixin, ListView):
     model = User
-    template_name = "read/teacher_list.html"           # ↓ 2-qismda shu nomdagi fayl
+    template_name = "read/teacher_list.html"  # ↓ 2-qismda shu nomdagi fayl
     context_object_name = "page_obj"
     paginate_by = 20
 
@@ -57,7 +58,7 @@ class TeacherListView(LoginRequiredMixin, ListView):
         qs = (
             User.objects.select_related("department__faculty")
             .filter(role__in=[Role.OQITUVCHI, Role.MUDIR, Role.PROREKTOR,
-                              Role.DEKAN, Role.SUPERADMIN])        # xohlagan rollarni qoldiring
+                              Role.DEKAN, Role.SUPERADMIN])  # xohlagan rollarni qoldiring
         )
 
         # Foydalanuvchi turi (role) bo‘yicha filtr
@@ -89,12 +90,13 @@ class TeacherListView(LoginRequiredMixin, ListView):
             "selected_dept_id": self.request.GET.get("department_id", ""),
         })
         return ctx
-    
+
     def dispatch(self, request, *args, **kwargs):
         if request.user.role == Role.OQITUVCHI:
             return HttpResponseForbidden("O'qituvchiga bu sahifaga kirish mumkin emas")
         return super().dispatch(request, *args, **kwargs)
-    
+
+
 @login_required
 def create_teacher(request):
     if request.user.role != Role.MUDIR or not request.user.department:
@@ -113,6 +115,7 @@ def create_teacher(request):
         form = forms.TeacherCreateForm(user=request.user)
 
     return render(request, 'create/teacher_create.html', {'form': form})
+
 
 @login_required
 def user_profile_detail(request, pk):
@@ -156,8 +159,8 @@ def user_profile_detail(request, pk):
 
     # Ruxsat: kafedra mudiri va shu kafedradan bo‘lsa
     has_permission_for_update_or_adding_work = (
-        request.user.role == Role.MUDIR and
-        request.user.department == user_profile.department
+            request.user.role == Role.MUDIR and
+            request.user.department == user_profile.department
     )
 
     context = {
@@ -171,6 +174,7 @@ def user_profile_detail(request, pk):
     }
 
     return render(request, 'read/user_profile_detail.html', context)
+
 
 @login_required
 def teacher_update_view(request, pk):
@@ -186,6 +190,7 @@ def teacher_update_view(request, pk):
         form = forms.TeacherUpdateForm(instance=user)
 
     return render(request, 'update/teacher_update.html', {'form': form})
+
 
 @login_required
 def ilmiy_ishlar_list(request):
@@ -277,7 +282,6 @@ def update_document_status(request, pk):
     return redirect('ilmiy_ish_detail', pk=pk)
 
 
-
 @login_required
 def add_requirement(request, teacher_id):
     teacher = get_object_or_404(User, pk=teacher_id)
@@ -301,16 +305,17 @@ def add_requirement(request, teacher_id):
 
 @login_required
 def work_plan_report(request):
-    # ---- 1.  Ruxsat: faqat kafedra mudiri ----
     if request.user.role != Role.MUDIR:
         return HttpResponseForbidden()
 
-    # ---- 2.  Filtrlar ----
-    fac_id  = request.GET.get("faculty")
+    # ---- Filterlar ----
+    fac_id = request.GET.get("faculty")
     dept_id = request.GET.get("department")
+    year_id = request.GET.get("year")  # ⬅️ yangi qo‘shildi
 
-    faculties   = Faculty.objects.all()
+    faculties = Faculty.objects.all()
     departments = Department.objects.filter(faculty_id=fac_id) if fac_id else Department.objects.none()
+    years = AcademicYear.objects.all()
 
     teachers = User.objects.filter(role=Role.OQITUVCHI)
     if fac_id:
@@ -319,38 +324,41 @@ def work_plan_report(request):
         teachers = teachers.filter(department_id=dept_id)
     teachers = teachers.order_by("last_name", "first_name")
 
-    # ---- 3.  Ustunlar ketma-ketligi ----
+    # ---- Jadval ustunlari (unchalik o‘zgarmaydi) ----
     main_plans = MainWorkPlan.objects.prefetch_related("subwork")
-    columns = []              # [(main, sub), ...] – tartib bo‘yicha
-    main_meta = []            # [{'mp': mp, 'subs': [sp, ...], 'colspan': N}, ...]
+    columns, main_meta = [], []
     for mp in main_plans:
-        subs = list(mp.subwork.all())
-        if not subs:          # agar child bo‘lmasa, bitta “soxta” sub yaratamiz
-            subs = [None]
+        subs = list(mp.subwork.all()) or [None]
         columns.extend([(mp, sp) for sp in subs])
         main_meta.append({"mp": mp, "subs": subs, "colspan": len(subs) * 2})
 
-    # ---- 4.  Hammasini bir martalik queryset -> dict ----
+    # ---- Statistik ma’lumot ----
     stat = defaultdict(lambda: {"planned": Decimal("0.0"), "actual": Decimal("0.0")})
 
-    # 4-a  Reja miqdori
-    for req in AddRequirement.objects.filter(teacher__in=teachers):
+    # Reja miqdori
+    req_qs = AddRequirement.objects.filter(teacher__in=teachers)
+    if year_id:
+        req_qs = req_qs.filter(academic_year_id=year_id)
+    for req in req_qs:
         main_id = req.main_plan_id or (req.sub_plan.parent_id if req.sub_plan else None)
-        sub_id  = req.sub_plan_id
+        sub_id = req.sub_plan_id
         key = (req.teacher_id, main_id, sub_id)
         stat[key]["planned"] += req.quantity_planned
 
-    # 4-b  Amalda miqdori
-    for pr in PlanResponse.objects.select_related("requirement").filter(
+    # Amalda bajarilgan
+    pr_qs = PlanResponse.objects.select_related("requirement").filter(
         requirement__teacher__in=teachers
-    ):
+    )
+    if year_id:
+        pr_qs = pr_qs.filter(academic_year_id=year_id)
+    for pr in pr_qs:
         req = pr.requirement
         main_id = req.main_plan_id or (req.sub_plan.parent_id if req.sub_plan else None)
-        sub_id  = req.sub_plan_id
+        sub_id = req.sub_plan_id
         key = (req.teacher_id, main_id, sub_id)
         stat[key]["actual"] += pr.quantity_actual
 
-    # ---- 5.  Jadval satrlari ----
+    # ---- Jadval satrlari ----
     table_rows = []
     for idx, t in enumerate(teachers, 1):
         row_cells = []
@@ -358,31 +366,33 @@ def work_plan_report(request):
             cell = stat[(t.id, mp.id, sp.id if sp else None)]
             row_cells.append(cell)
         table_rows.append({"idx": idx, "teacher": t, "cells": row_cells})
-    paginator = Paginator(table_rows, 100)  # har sahifada 100 o'qituvchi
+
+    paginator = Paginator(table_rows, 100)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
-    # ---- 6.  Footer (jami) ----
+    # ---- Footer ----
     footer = []
     for mp, sp in columns:
         p_sum = sum(stat[(t.id, mp.id, sp.id if sp else None)]["planned"] for t in teachers)
-        a_sum = sum(stat[(t.id, mp.id, sp.id if sp else None)]["actual"]  for t in teachers)
+        a_sum = sum(stat[(t.id, mp.id, sp.id if sp else None)]["actual"] for t in teachers)
         footer.append({"planned": p_sum, "actual": a_sum})
 
-    # ---- 7.  Render ----
     return render(
         request,
         "read/work_plan_report.html",
         {
             "faculties": faculties,
             "departments": departments,
+            "years": years,  # ⬅️ Templatega yuboriladi
             "selected_faculty": fac_id or "",
             "selected_department": dept_id or "",
-            "main_meta": main_meta,   # sarlavha ma’lumoti
-            "columns": columns,       # tartib bo‘yicha (mp, sp)
+            "selected_year": year_id or "",
+            "main_meta": main_meta,
+            "columns": columns,
             "table_rows": table_rows,
             "footer": footer,
-            'page_obj': page_obj
+            "page_obj": page_obj,
         },
     )
 
@@ -393,8 +403,9 @@ def work_plan_export(request):
         return HttpResponseForbidden()
 
     # === 1. Filtrlar ===
-    fac_id  = request.GET.get("faculty")
+    fac_id = request.GET.get("faculty")
     dept_id = request.GET.get("department")
+    year_id = request.GET.get("academic_year")  # 🔥 academic year filter
 
     teachers = User.objects.filter(role=Role.OQITUVCHI)
     if fac_id:
@@ -403,25 +414,41 @@ def work_plan_export(request):
         teachers = teachers.filter(department_id=dept_id)
     teachers = teachers.order_by("last_name", "first_name")
 
-    # === 2. Ustunlar tartibi ===
+    # === 2. Ustunlar tartibi (faqat shu yil) ===
     main_plans = MainWorkPlan.objects.prefetch_related("subwork")
+    if year_id:
+        main_plans = main_plans.filter(academic_year_id=year_id)  # 🔥 yil bo‘yicha filter
+
     columns = []
     for mp in main_plans:
-        subs = list(mp.subwork.all()) or [None]   # child yo‘q bo‘lsa bitta bo‘sh sub
+        subs = list(mp.subwork.all()) or [None]  # child yo‘q bo‘lsa bitta bo‘sh sub
         columns.extend([(mp, sp) for sp in subs])
 
     # === 3. Reja / Amalda yig‘indilar ===
     stat = defaultdict(lambda: {"planned": Decimal("0"), "actual": Decimal("0")})
 
-    for req in AddRequirement.objects.filter(teacher__in=teachers):
+    reqs = AddRequirement.objects.filter(teacher__in=teachers)
+    if year_id:
+        reqs = reqs.filter(academic_year_id=year_id)  # 🔥 yil bo‘yicha filter
+
+    for req in reqs:
         mp = req.main_plan or (req.sub_plan.parent if req.sub_plan else None)
+        if not mp:
+            continue
         key = (req.teacher_id, mp.id, req.sub_plan_id)
         stat[key]["planned"] += req.quantity_planned
 
-    for pr in PlanResponse.objects.select_related("requirement").filter(
-            requirement__teacher__in=teachers):
+    prs = PlanResponse.objects.select_related("requirement").filter(
+        requirement__teacher__in=teachers
+    )
+    if year_id:
+        prs = prs.filter(requirement__academic_year_id=year_id)  # 🔥 yil bo‘yicha filter
+
+    for pr in prs:
         req = pr.requirement
-        mp  = req.main_plan or (req.sub_plan.parent if req.sub_plan else None)
+        mp = req.main_plan or (req.sub_plan.parent if req.sub_plan else None)
+        if not mp:
+            continue
         key = (req.teacher_id, mp.id, req.sub_plan_id)
         stat[key]["actual"] += pr.quantity_actual
 
@@ -430,8 +457,8 @@ def work_plan_export(request):
     ws = wb.active
     ws.title = "Ish reja"
 
-    blue = PatternFill("solid", fgColor="BDD7EE")   # katta sarlavha
-    gray = PatternFill("solid", fgColor="D9D9D9")   # kichik sarlavha
+    blue = PatternFill("solid", fgColor="BDD7EE")  # katta sarlavha
+    gray = PatternFill("solid", fgColor="D9D9D9")  # kichik sarlavha
     bold = Font(bold=True)
     center = Alignment(horizontal="center", vertical="center", wrapText=True)
     thin = Border(left=Side(style="thin"), right=Side(style="thin"),
@@ -440,37 +467,51 @@ def work_plan_export(request):
     # === 4-a 3-qavatli sarlavha ===
     row = 1
     col = 1
-    ws.merge_cells(start_row=row, start_column=col, end_row=row+2, end_column=col)
-    ws.cell(row, col, "#").fill = blue; ws.cell(row, col).font = bold; ws.cell(row, col).alignment = center
+    ws.merge_cells(start_row=row, start_column=col, end_row=row + 2, end_column=col)
+    ws.cell(row, col, "#").fill = blue
+    ws.cell(row, col).font = bold
+    ws.cell(row, col).alignment = center
     col += 1
-    ws.merge_cells(start_row=row, start_column=col, end_row=row+2, end_column=col)
-    ws.cell(row, col, "F.I.Sh").fill = blue; ws.cell(row, col).font = bold; ws.cell(row, col).alignment = center
+    ws.merge_cells(start_row=row, start_column=col, end_row=row + 2, end_column=col)
+    ws.cell(row, col, "F.I.Sh").fill = blue
+    ws.cell(row, col).font = bold
+    ws.cell(row, col).alignment = center
     col += 1
 
     # 1-qavat: MainWorkPlan nomi
     for mp in main_plans:
         span = (len(mp.subwork.all()) or 1) * 2
-        ws.merge_cells(start_row=row, start_column=col, end_row=row, end_column=col+span-1)
+        ws.merge_cells(start_row=row, start_column=col, end_row=row, end_column=col + span - 1)
         cell = ws.cell(row, col, mp.name)
-        cell.fill = blue; cell.font = bold; cell.alignment = center
+        cell.fill = blue
+        cell.font = bold
+        cell.alignment = center
         col += span
-    row += 1; col = 3
+    row += 1
+    col = 3
 
     # 2-qavat: SubWorkPlan nomi
     for mp in main_plans:
         subs = list(mp.subwork.all()) or [None]
         for sp in subs:
-            ws.merge_cells(start_row=row, start_column=col, end_row=row, end_column=col+1)
+            ws.merge_cells(start_row=row, start_column=col, end_row=row, end_column=col + 1)
             name = sp.name if sp else ""
             cell = ws.cell(row, col, name)
-            cell.fill = gray; cell.font = bold; cell.alignment = center
+            cell.fill = gray
+            cell.font = bold
+            cell.alignment = center
             col += 2
-    row += 1; col = 3
+    row += 1
+    col = 3
 
     # 3-qavat: Reja/Amalda
     for mp, sp in columns:
-        ws.cell(row, col, "Reja").fill = gray; ws.cell(row, col).font = bold; ws.cell(row, col).alignment = center
-        ws.cell(row, col+1, "Amalda").fill = gray; ws.cell(row, col+1).font = bold; ws.cell(row, col+1).alignment = center
+        ws.cell(row, col, "Reja").fill = gray
+        ws.cell(row, col).font = bold
+        ws.cell(row, col).alignment = center
+        ws.cell(row, col + 1, "Amalda").fill = gray
+        ws.cell(row, col + 1).font = bold
+        ws.cell(row, col + 1).alignment = center
         col += 2
 
     # === 4-b  O‘qituvchi satrlari ===
@@ -484,24 +525,28 @@ def work_plan_export(request):
             key = (t.id, mp.id, sp.id if sp else None)
             dat = stat[key]
             ws.cell(excel_row, col, float(dat["planned"])).alignment = center
-            ws.cell(excel_row, col+1, float(dat["actual"])).alignment = center
+            ws.cell(excel_row, col + 1, float(dat["actual"])).alignment = center
             col += 2
         idx += 1
         excel_row += 1
 
     # === 4-c  Jami qatori ===
-    ws.cell(excel_row, 1, "Jami"); ws.merge_cells(start_row=excel_row, start_column=1, end_row=excel_row, end_column=2)
-    ws.cell(excel_row, 1).font = bold; ws.cell(excel_row, 1).alignment = center
+    ws.cell(excel_row, 1, "Jami")
+    ws.merge_cells(start_row=excel_row, start_column=1, end_row=excel_row, end_column=2)
+    ws.cell(excel_row, 1).font = bold
+    ws.cell(excel_row, 1).alignment = center
     col = 3
     for mp, sp in columns:
         planned_sum = sum(stat[(t.id, mp.id, sp.id if sp else None)]["planned"] for t in teachers)
-        actual_sum  = sum(stat[(t.id, mp.id, sp.id if sp else None)]["actual"]  for t in teachers)
-        ws.cell(excel_row, col, float(planned_sum)).font = bold; ws.cell(excel_row, col).alignment = center
-        ws.cell(excel_row, col+1, float(actual_sum)).font = bold; ws.cell(excel_row, col+1).alignment = center
+        actual_sum = sum(stat[(t.id, mp.id, sp.id if sp else None)]["actual"] for t in teachers)
+        ws.cell(excel_row, col, float(planned_sum)).font = bold
+        ws.cell(excel_row, col).alignment = center
+        ws.cell(excel_row, col + 1, float(actual_sum)).font = bold
+        ws.cell(excel_row, col + 1).alignment = center
         col += 2
 
     # === 4-d  Chiziqlar va ustun eni ===
-    for r in ws.iter_rows(min_row=1, max_row=excel_row, min_col=1, max_col=col-1):
+    for r in ws.iter_rows(min_row=1, max_row=excel_row, min_col=1, max_col=col - 1):
         for c in r:
             c.border = thin
     for c in range(1, col):
@@ -511,7 +556,7 @@ def work_plan_export(request):
     response = HttpResponse(
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
-    filename = "work_plan_report.xlsx"
+    filename = f"work_plan_report_{year_id or 'all'}.xlsx"  # 🔥 fayl nomida yil
     response["Content-Disposition"] = f'attachment; filename="{filename}"'
     wb.save(response)
     return response
@@ -526,7 +571,7 @@ def doc_approve_detail(request, pk):
     if request.method == "POST":
         form = forms.ApproveForm(request.POST)
         if form.is_valid():
-            action = form.cleaned_data["action"]        # approve / reject
+            action = form.cleaned_data["action"]  # approve / reject
             comment = form.cleaned_data["comment"]
             if action == "approve":
                 doc.is_confirmed = True
@@ -553,7 +598,7 @@ def doc_approve_detail(request, pk):
             # bildirshnoma: o‘qituvchiga
             Notification.objects.create(
                 recipient=doc.upload_user,
-                title=f"Hujjat {'tasdiqlandi' if action=='approve' else 'rad etildi'}",
+                title=f"Hujjat {'tasdiqlandi' if action == 'approve' else 'rad etildi'}",
                 message=comment or "-",
                 url=reverse("ilmiy_ish_detail", args=[doc.id])
             )
@@ -573,9 +618,9 @@ def notification_list(request):
     ).order_by("-created")
 
     # ----- Paginator (20 ta) -----
-    paginator   = Paginator(notif_qs, 20)
+    paginator = Paginator(notif_qs, 20)
     page_number = request.GET.get("page")
-    page_obj    = paginator.get_page(page_number)
+    page_obj = paginator.get_page(page_number)
 
     # Sahifada ko‘rinayotgan xabarlarni o‘qilgan deb belgilash
     # visible_ids = [n.id for n in page_obj if not n.is_read]
@@ -593,19 +638,19 @@ def dashboard(request):
         return redirect('teacher_dashboard')
     # ---- 1.  Ruxsat ----
     if request.user.role not in (
-        Role.MUDIR,
-        Role.SUPERADMIN,
-        Role.PROREKTOR,
-        Role.DEKAN,
+            Role.MUDIR,
+            Role.SUPERADMIN,
+            Role.PROREKTOR,
+            Role.DEKAN,
     ):
         return HttpResponseForbidden()
 
     # ---- 2.  Asosiy raqamlar ----
-    total_faculties   = Faculty.objects.count()
+    total_faculties = Faculty.objects.count()
     total_departments = Department.objects.count()
-    total_users       = User.objects.count()
-    total_docs        = Document.objects.count()
-    pending_docs      = Document.objects.filter(status=DocumentStatus.PENDING).count()
+    total_users = User.objects.count()
+    total_docs = Document.objects.count()
+    pending_docs = Document.objects.filter(status=DocumentStatus.PENDING).count()
 
     # ---- 3. Fakultet → kafedra sonlari ----
     fac_breakdown = (
@@ -654,9 +699,9 @@ def dashboard(request):
         "pending_docs": pending_docs,
 
         # blok 2
-        "fac_breakdown": fac_breakdown,     # list of dicts
-        "role_counts": role_counts,         # dict
-        "status_counts": status_counts,     # dict
+        "fac_breakdown": fac_breakdown,  # list of dicts
+        "role_counts": role_counts,  # dict
+        "status_counts": status_counts,  # dict
 
         # blok 3
         "recent_docs": recent_docs,
@@ -673,26 +718,26 @@ def teacher_dashboard(request):
     user = request.user
 
     # 2) Rejalar va amalda bajarilgan ishlar
-    req_qs   = AddRequirement.objects.filter(teacher=user)
-    resp_qs  = PlanResponse.objects.filter(requirement__teacher=user)
+    req_qs = AddRequirement.objects.filter(teacher=user)
+    resp_qs = PlanResponse.objects.filter(requirement__teacher=user)
 
-    total_req_cnt   = req_qs.count()
-    total_req_qty   = req_qs.aggregate(q=Sum("quantity_planned"))["q"] or 0
+    total_req_cnt = req_qs.count()
+    total_req_qty = req_qs.aggregate(q=Sum("quantity_planned"))["q"] or 0
 
-    total_done_qty  = resp_qs.aggregate(q=Sum("quantity_actual"))["q"] or 0
-    progress_pct    = round((total_done_qty / total_req_qty) * 100, 1) if total_req_qty else 0
+    total_done_qty = resp_qs.aggregate(q=Sum("quantity_actual"))["q"] or 0
+    progress_pct = round((total_done_qty / total_req_qty) * 100, 1) if total_req_qty else 0
 
     # 3) Hujjat statuslari
-    status_map = dict(DocumentStatus.choices)   # {'approved':'Tasdiqlangan', ...}
+    status_map = dict(DocumentStatus.choices)  # {'approved':'Tasdiqlangan', ...}
     raw_status = (
         Document.objects
         .filter(upload_user=user)
         .values("status")
         .annotate(total=Count("id"))
     )
-    doc_status = { name:0 for name in status_map.values() }   # default 0
+    doc_status = {name: 0 for name in status_map.values()}  # default 0
     for row in raw_status:
-        doc_status[ status_map[row["status"]] ] = row["total"]
+        doc_status[status_map[row["status"]]] = row["total"]
 
     # 4) Oxirgi xabarlar (o‘qilmagan Rejection + umumiy)
     unread_notifs = Notification.objects.filter(recipient=user, is_read=False)[:10]
@@ -727,8 +772,8 @@ def my_profile(request):
     ).order_by("-created")[:15]
 
     # ----- 2.  Hujjatlar ro‘yxati + filtr -----
-    query     = request.GET.get("q", "")
-    type_id   = request.GET.get("type", "")
+    query = request.GET.get("q", "")
+    type_id = request.GET.get("type", "")
 
     docs_qs = Document.objects.filter(upload_user=user).select_related("document_type")
 
@@ -740,9 +785,9 @@ def my_profile(request):
     if type_id:
         docs_qs = docs_qs.filter(document_type_id=type_id)
 
-    paginator   = Paginator(docs_qs.order_by("-created"), 10)
+    paginator = Paginator(docs_qs.order_by("-created"), 10)
     page_number = request.GET.get("page")
-    page_obj    = paginator.get_page(page_number)
+    page_obj = paginator.get_page(page_number)
 
     context = {
         "unread_notifs": unread_notifs,
@@ -819,7 +864,6 @@ def my_notifications(request):
     return render(request, "read/my_notifications.html", {"page_obj": page_obj})
 
 
-
 @login_required
 def document_create(request):
     if request.user.role != Role.OQITUVCHI:
@@ -829,7 +873,7 @@ def document_create(request):
         form = forms.DocumentCreateForm(request.POST, request.FILES, user=request.user)
         if form.is_valid():
             doc = form.save(commit=False)
-            doc.upload_user  = request.user
+            doc.upload_user = request.user
             doc.status = DocumentStatus.PENDING
             doc.is_confirmed = False
             doc.save()
@@ -845,6 +889,6 @@ def document_create(request):
             #     )
             return redirect("my_documents")
     else:
-        form =forms.DocumentCreateForm(user=request.user)
+        form = forms.DocumentCreateForm(user=request.user)
 
     return render(request, "create/document_create.html", {"form": form})
